@@ -73,3 +73,43 @@ wget https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.win/x64/sci
 mv sciter.dll target/debug
 cargo run
 ```
+
+## Runtime capture notes for developers
+
+Windows capture and input code must account for the active desktop, not only the
+process elevation level. The normal interactive desktop is usually
+`WinSta0\Default`; logon, lock-screen password entry, and UAC secure prompts use
+a different secure input desktop such as `WinSta0\Winlogon`.
+
+For the normal unlocked user desktop, RustAdmin should prefer capture backends in
+this order:
+
+```text
+Windows Graphics Capture -> WinMag -> DXGI Desktop Duplication -> GDI
+```
+
+This priority is not valid unchanged for lock screen, logon, or UAC secure
+desktop capture. On secure desktops:
+
+- Windows Graphics Capture is not a logon-screen capture solution.
+- WinMag is a normal-desktop fallback, not a reliable secure-desktop backend.
+- DXGI Desktop Duplication can lose access during desktop transitions and must
+  recreate its capture backend/pipeline after lock, unlock, display, session, or
+  desktop changes.
+- GDI is the practical last fallback to try from an installed service or helper
+  that has access to the current input desktop.
+
+Portable elevation is not the same thing as installed service mode. An elevated
+portable GUI still runs with the user's token and must not be treated as
+equivalent to `LocalSystem`. For unattended access and lock/logon support, use
+installed service mode and make sure capture and input injection are recreated
+for the current input desktop after each desktop transition.
+
+Here, a helper means a RustAdmin-owned companion process launched in a specific
+Windows session or privilege context, for example a user-session capture helper
+for WGC or a portable helper for elevated portable work. A helper is not
+automatically equivalent to Administrator, `LocalSystem`, or installed service
+mode.
+
+For deeper implementation notes, see
+`rustdesk-client/docs/WINDOWS_DEVELOPMENT.md` in the source tree.
