@@ -20,8 +20,8 @@ RustDesk Server Pro tiene más características comparado con la versión de có
 - [Consola web](https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/console/)
 - [API](https://github.com/rustdesk/rustdesk/wiki/FAQ#api-of-rustdesk-server-pro)
 - [OIDC](https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/oidc/), [LDAP](https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/ldap/), [2FA](https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/2fa/)
-- Libreta de direcciones
-- Gestión de registros (Conexión, transferencia de archivos, alarma, etc.)
+- [Directorio](/docs/es/self-host/rustdesk-server-pro/address-book/)
+- [Gestión de registros](/docs/es/self-host/rustdesk-server-pro/audit-logs/) (Conexión, transferencia de archivos, alarma, etc.)
 - Gestión de dispositivos
 - [Sincronización de configuraciones de seguridad](https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/strategy/)
 - [Control de acceso](https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/permissions/)

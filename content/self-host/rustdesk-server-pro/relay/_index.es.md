@@ -35,7 +35,44 @@ Puede tener varios servidores de relé ejecutándose por todo el mundo y aprovec
 Problema conocido: https://github.com/rustdesk/rustdesk/discussions/7934
 {{% /notice %}}
 
-> Necesitará el par de claves privadas `id_ed25519` y `id_ed25519.pub`.
+> Establezca la variable de entorno `KEY` de `hbbr` en la clave pública de `id_ed25519.pub`, o copie `id_ed25519` e `id_ed25519.pub` en el servidor de retransmisión.
+
+### Docker Compose
+
+Un servidor de retransmisión adicional solo necesita `hbbr`; no se requieren `hbbs` ni `depends_on`. Elija uno de los siguientes métodos de configuración de la clave:
+
+- Mantenga la sección `environment` y establezca `KEY` en el contenido de `id_ed25519.pub`, como se muestra a continuación.
+- Elimine toda la sección `environment` y coloque `id_ed25519` e `id_ed25519.pub` en `./data`.
+
+Cree un archivo `compose.yml` con el siguiente contenido.
+
+```yaml
+services:
+  hbbr:
+    container_name: hbbr
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    environment:
+      KEY: "<PUBLIC_KEY>"
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+```
+
+### Docker
+
+#### Establecer la clave mediante una variable de entorno
+
+Establezca `KEY` en el contenido de `id_ed25519.pub`.
+
+```bash
+# sudo docker run --name hbbr -e KEY="<PUBLIC_KEY>" -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+#### Usar archivos de claves
+
+El siguiente ejemplo de Docker utiliza el método de archivos de claves.
 
 1 - Si docker ya está instalado, conéctese a su servidor a través de SSH y cree un volumen para hbbr.
 
@@ -57,8 +94,18 @@ La sintaxis del comando es `scp <ruta/nombre_archivo> usuario@servidor:</ruta/de
 3 - Despliegue el contenedor hbbr usando el volumen creado previamente. Este volumen tiene el par de claves privadas necesario para ejecutar su servidor de relé privado.
 
 ```
+# sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+La imagen `rustdesk/rustdesk-server` sigue aceptando `-k <KEY>`. Para utilizar el archivo de clave montado, ejecútela con `-k _`:
+
+```bash
 # sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server hbbr -k _
 ```
+
+Aquí, `_` es un valor especial, no la clave en sí. Indica a `hbbr` que cargue o genere `id_ed25519`, obtenga su clave pública y la utilice para validar las solicitudes de retransmisión. Las versiones de RustDesk Server Pro anteriores a 1.8.6 también aceptaban `-k _` para cargar `id_ed25519`.
+
+A partir de RustDesk Server Pro 1.8.6, la opción `-k` de `hbbr` está obsoleta y se ignora. Si `KEY` no está definida, `hbbr` obtiene la clave pública de `id_ed25519` o la lee de `id_ed25519.pub` si el archivo de clave privada no existe. Si no existe ninguno de los dos archivos, `hbbr` se ejecuta en modo de retransmisión público.
 
 4 - Verifique los registros de ejecución para verificar que hbbr está ejecutándose usando su par de claves.
 

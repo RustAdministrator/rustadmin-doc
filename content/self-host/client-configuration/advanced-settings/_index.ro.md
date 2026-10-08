@@ -270,6 +270,25 @@ Folosește whitelist pentru IP-uri.
 | :------: | :------: | :------: | :------: |
 | N | `,` or `<ip1>,<ip2>,<ip3>` | `,` means no filter | `whitelist=,` |
 
+Notația CIDR este acceptată, de exemplu `whitelist=192.168.1.0/24,10.0.0.5`.
+
+### id-whitelist
+
+Folosește whitelist pentru ID-uri. Doar ID-urile din listă se pot conecta la acest dispozitiv.
+
+Sunt acceptate metacaractere: `*` corespunde oricărui număr de caractere, `?` exact unui caracter. Potrivirea nu ține cont de majuscule.
+
+**Notă**: ID-ul este raportat de clientul care se conectează, deci nu este un mecanism de autentificare. Această listă reduce expunerea, nu înlocuiește parola sau 2FA.
+
+**Locație**:
+
+1. **Desktop** Settings → Security → Security → Use ID whitelisting
+2. **Mobile** Settings → Share screen → Use ID whitelisting
+
+| Install required | Values | Default | Example | Version |
+| :------: | :------: | :------: | :------: | :------: |
+| N | `,` or `<id1>,<id2>,<id3>` | `,` means no filter | `id-whitelist=123456789,98765432?,abc*` | >= 1.5.0 |
+
 ### allow-auto-disconnect & auto-disconnect-timeout
 
 Închide automat sesiunile primite după o perioadă de inactivitate a utilizatorului.
@@ -420,9 +439,19 @@ Puteți verifica [LANGS](https://github.com/rustdesk/rustdesk/blob/master/src/la
 | :------: | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-auto-record-outgoing=Y` | >= 1.3.2 |
 
+### hide-recording-button
+
+Ascunde butonul de înregistrare în sesiunile la distanță pe partea care controlează. Această opțiune nu dezactivează înregistrarea. Dacă înregistrarea automată a sesiunilor inițiate este activată, sesiunile sunt înregistrate în continuare, dar utilizatorii nu pot opri înregistrarea din bara de instrumente a sesiunii.
+
+| Install required | Values | Default | Example |
+| :------: | :------: | :------: | :------: |
+| N | Y, N | N | `hide-recording-button=Y` |
+
 ### video-save-directory
 
 Directorul în care sunt salvate videoclipurile înregistrate.
+
+Pentru înregistrările realizate pe partea controlată de serviciul Windows instalat, utilizați [`windows-service-video-save-directory`](#windows-service-video-save-directory).
 
 **Locație**:
 
@@ -438,9 +467,19 @@ Valori implicite:
 
 **Notă**: Înlocuiți **app_name** cu numele aplicației curente.
 
+### windows-service-video-save-directory
+
+Directorul în care un client Windows instalat salvează înregistrările atunci când rulează ca serviciu. Calea trebuie să fie absolută. O cale goală sau relativă este ignorată, iar RustDesk utilizează în schimb directorul implicit.
+
+| Install required | Values | Default | Example |
+| :------: | :------: | :------: | :------: |
+| Y | Absolute Windows path | `<unitate de sistem>\ProgramData\<app_name>\recording` | `windows-service-video-save-directory=D:\RustDesk\recordings` |
+
 ### allow-auto-update
 
 Permite actualizări automate. Când este activat, clientul va descărca și instala automat cea mai recentă versiune din versiunile oficiale GitHub când este disponibilă o nouă versiune.
+
+Această setare se aplică numai pe Windows când tipul de conexiune este setat la bidirecțional sau de intrare. Nu se aplică pentru ieșire.
 
 **Locație**:
 
@@ -514,21 +553,6 @@ Folosește întotdeauna rendering software.
 | Install required | Values | Default | Example |
 | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-always-software-render=N` |
-
-### allow-linux-headless
-
-Permite conexiuni primite dacă nu există display-uri (headless).
-
-Această opțiune necesită mediu desktop, server Xorg și GDM, vezi [PR 3902](https://github.com/rustdesk/rustdesk/pull/3902).
-
-**Locație**:
-
-1. **Desktop** Settings → General → Other → Allow Linux headless
-2. **Mobile**
-
-| Install required | Values | Default | Example |
-| :------: | :------: | :------: | :------: |
-| Y | Y, N | N | `allow-linux-headless=N` |
 
 ### enable-hwcodec
 
@@ -626,6 +650,21 @@ Folosiți redarea pe texturi pentru imagini mai line. Dacă întâmpinați probl
 | :------: | :------: | :------: |
 | Y, N | linux:Y, macOS:N, win7:N, win10+:Y | `use-texture-render=Y` |
 
+### enable-tcp-punch
+
+Activează traversarea TCP (hole punching). Este activată implicit atât pentru serverele găzduite pe infrastructura proprie, cât și pentru serverele publice.
+
+**Locație**:
+
+1. **Desktop** Setări → General → Altele → Activează traversarea TCP (hole punching)
+2. **Mobile** Setări → Activează traversarea TCP (hole punching)
+
+Disponibil din RustDesk 1.5.0
+
+| Valori | Implicit | Exemplu |
+| :------: | :------: | :------: |
+| Y, N | Y | `enable-tcp-punch=N` |
+
 ### enable-udp-punch
 
 **Locație**:
@@ -637,7 +676,7 @@ Disponibil din RustDesk 1.4.1, RustDesk Server Pro 1.6.2
 
 | Valori | Implicit | Exemplu |
 | :------: | :------: | :------: |
-| Y, N | Y | `enable-udp-punch=N` |
+| Y, N | selfhost:N, otherwise:Y | `enable-udp-punch=N` |
 
 ### enable-ipv6-punch
 
@@ -651,6 +690,37 @@ Disponibil din RustDesk 1.4.1, RustDesk Server Pro 1.6.2
 | Values | Default | Example |
 | :------: | :------: | :------: |
 | Y, N | selfhost:N, otherwise:Y | `enable-ipv6-punch=N` |
+
+### enable-webrtc
+
+Activează conexiunile P2P prin WebRTC. La fel ca traversarea UDP și conexiunile P2P prin IPv6, această opțiune este dezactivată implicit pentru serverele găzduite pe infrastructura proprie. Setați `enable-webrtc=Y` pentru a o activa explicit.
+
+**Locație**:
+
+1. **Desktop** Setări → General → Altele → Activează conexiunea P2P prin WebRTC
+2. **Mobile** Setări → Activează conexiunea P2P prin WebRTC
+
+Disponibil din RustDesk 1.5.0, RustDesk Server Pro 1.8.7
+
+| Valori | Implicit | Exemplu |
+| :------: | :------: | :------: |
+| Y, N | selfhost:N, otherwise:Y | `enable-webrtc=Y` |
+
+### relay-fallback-delay
+
+Durata, în secunde, în care o conexiune prin releu deja stabilită așteaptă o conexiune directă WebRTC înainte de a fi utilizat releul. Măriți valoarea pentru a acorda mai mult timp unei conexiuni directe lente; micșorați-o pentru a utiliza releul mai devreme atunci când nu se poate stabili o conexiune directă.
+
+Se aplică doar când WebRTC este activat (`enable-webrtc`). Câmpul din clientul desktop este ascuns când WebRTC este dezactivat. Lăsați-l gol pentru a utiliza valoarea implicită de 2.5 secunde. Valorile nevalide, zero sau negative folosesc, de asemenea, valoarea implicită.
+
+**Locație**:
+
+**Desktop** Setări → General → Altele → Activează conexiunea P2P prin WebRTC → Întârziere înainte de trecerea la releu în secunde
+
+Disponibil din RustDesk 1.5.0
+
+| Valori | Implicit | Exemplu |
+| :------: | :------: | :------: |
+| Număr pozitiv de secunde sau câmp gol | 2.5 | `relay-fallback-delay=2.5` |
 
 ## Setări de afișare
 
@@ -1218,6 +1288,18 @@ https://github.com/rustdesk/rustdesk/discussions/7956
 | Valori | Implicit | Exemplu |
 | :------: | :------: | :------: |
 | Y, N | Y | `remove-preset-password-warning=Y` |
+
+### hide-general-settings
+
+Controlează dacă se ascunde fila `General` din pagina de setări. Spre deosebire de celelalte opțiuni `hide-*-settings`, aceasta funcționează și atunci când `Disable settings` este activat, deoarece `Disable settings` nu ascunde fila `General`.
+
+https://github.com/rustdesk/rustdesk-server-pro/issues/1001
+
+Disponibil din RustDesk 1.5.0
+
+| Valori | Implicit | Exemplu |
+| :------: | :------: | :------: |
+| Y, N | N | `hide-general-settings=Y` |
 
 ### hide-security-settings / hide-network-settings / hide-server-settings / hide-proxy-settings / hide-websocket-settings / hide-remote-printer-settings
 

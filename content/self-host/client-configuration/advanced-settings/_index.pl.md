@@ -270,6 +270,25 @@ Użyj białej listy adresów IP.
 | :------: | :------: | :------: | :------: |
 | N | `,` lub `<ip1>,<ip2>,<ip3>` | `,` oznacza brak filtru | `whitelist=,` |
 
+Obsługiwana jest notacja CIDR, na przykład `whitelist=192.168.1.0/24,10.0.0.5`.
+
+### id-whitelist
+
+Użyj białej listy ID. Tylko wymienione ID mogą łączyć się z tym urządzeniem.
+
+Obsługiwane są symbole wieloznaczne: `*` odpowiada dowolnej liczbie znaków, `?` dokładnie jednemu znakowi. Wielkość liter nie ma znaczenia.
+
+**Uwaga**: ID jest zgłaszane przez łączącego się klienta, więc nie jest to mechanizm uwierzytelniania. Ta biała lista zmniejsza ekspozycję, nie zastępuje hasła ani 2FA.
+
+**Lokalizacja**:
+
+1. **K. stacjonarny** Ustawienia → Zabezpieczenia → Zabezpieczenia → Użyj białej listy ID
+2. **Smartfon** Ustawienia → Udostępnianie ekranu → Użyj białej listy ID
+
+| Wymagana instalacja | Wartości | Domyślne | Przykład | Wersja |
+| :------: | :------: | :------: | :------: | :------: |
+| N | `,` lub `<id1>,<id2>,<id3>` | `,` oznacza brak filtru | `id-whitelist=123456789,98765432?,abc*` | >= 1.5.0 |
+
 ### allow-auto-disconnect i auto-disconnect-timeout
 
 Automatycznie zamykaj sesje przychodzące po okresie braku aktywności użytkownika.
@@ -420,9 +439,19 @@ Automatycznie nagrywaj sesje wychodzące.
 | :------: | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-auto-record-outgoing=Y` | >= 1.3.2 |
 
+### hide-recording-button
+
+Ukrywa przycisk nagrywania w sesjach zdalnych po stronie sterującej. Nie wyłącza to nagrywania. Jeśli automatyczne nagrywanie sesji wychodzących jest włączone, sesje nadal są nagrywane, ale użytkownicy nie mogą zatrzymać nagrywania z paska narzędzi sesji.
+
+| Wymagana instalacja | Wartości | Domyślne | Przykład |
+| :------: | :------: | :------: | :------: |
+| N | Y, N | N | `hide-recording-button=Y` |
+
 ### video-save-directory
 
 Katalog, w którym zapisywane są nagrane filmy.
+
+W przypadku nagrań wykonywanych po stronie sterowanej przez zainstalowaną usługę Windows użyj [`windows-service-video-save-directory`](#windows-service-video-save-directory).
 
 **Lokalizacja**:
 
@@ -438,9 +467,19 @@ Domyślne wartości:
 
 **Notka**: **app_name** oznacza aktualną nazwę aplikacji.
 
+### windows-service-video-save-directory
+
+Katalog, w którym zainstalowany klient Windows zapisuje nagrania podczas działania jako usługa. Ścieżka musi być bezwzględna. Pusta lub względna ścieżka jest ignorowana, a RustDesk używa zamiast niej katalogu domyślnego.
+
+| Wymagana instalacja | Wartości | Domyślne | Przykład |
+| :------: | :------: | :------: | :------: |
+| Y | Bezwzględna ścieżka Windows | `<dysk systemowy>\ProgramData\<app_name>\recording` | `windows-service-video-save-directory=D:\RustDesk\recordings` |
+
 ### allow-auto-update
 
 Zezwalaj na automatyczne aktualizacje. Po włączeniu klient automatycznie pobierze i zainstaluje najnowszą wersję z oficjalnych wydań GitHub, gdy będzie dostępna nowa wersja.
+
+To ustawienie działa tylko w systemie Windows, gdy typ połączenia jest ustawiony na dwukierunkowe lub przychodzące. Nie działa dla połączeń wychodzących.
 
 **Lokalizacja**:
 
@@ -514,21 +553,6 @@ Zawsze używaj renderowania programowego.
 | Wymagana instalacja | Wartości | Domyślne | Przykład |
 | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-always-software-render=N` |
-
-### allow-linux-headless
-
-Zezwól na połączenia przychodzące, jeśli nie ma wyświetlaczy.
-
-Ta opcja wymaga środowiska graficznego, serwera Xorg i GDM, zobacz [PR 3902](https://github.com/rustdesk/rustdesk/pull/3902).
-
-**Lokalizacja**:
-
-1. **K. stacjonarny** Ustawienia → Ogólne → Inne → Zezwól na obsługę Linuxa bez monitora
-2. **Smartfon**
-
-| Wymagana instalacja | Wartości | Domyślne | Przykład |
-| :------: | :------: | :------: | :------: |
-| Y | Y, N | N | `allow-linux-headless=N` |
 
 ### enable-hwcodec
 
@@ -626,6 +650,21 @@ Użyj renderowania tekstur, aby uzyskać płynniejsze obrazy. Jeśli napotkasz p
 | :------: | :------: | :------: |
 | Y, N | linux:Y, macOS:N, win7:N, win10+:Y | `use-texture-render=Y` |
 
+### enable-tcp-punch
+
+Włącza tworzenie tunelu TCP (hole punching). Opcja jest domyślnie włączona zarówno dla serwerów hostowanych samodzielnie, jak i publicznych.
+
+**Lokalizacja**:
+
+1. **K. stacjonarny** Ustawienia → Ogólne → Inne → Włącz tworzenie tunelu TCP
+2. **Smartfon** Ustawienia → Włącz tworzenie tunelu TCP
+
+Dostępne od wersji RustDesk 1.5.0
+
+| Wartości | Domyślnie | Przykład |
+| :------: | :------: | :------: |
+| Y, N | Y | `enable-tcp-punch=N` |
+
 ### enable-udp-punch
 
 **Lokalizacja**:
@@ -637,7 +676,7 @@ Dostępne od wersji RustDesk 1.4.1, RustDesk w wersji Pro od 1.6.2
 
 | Wartości | Domyślnie | Przykład |
 | :------: | :------: | :------: |
-| Y, N | Y | `enable-udp-punch=N` |
+| Y, N | selfhost:N, otherwise:Y | `enable-udp-punch=N` |
 
 ### enable-ipv6-punch
 
@@ -651,6 +690,37 @@ Dostępne od wersji RustDesk 1.4.1, RustDesk w wersji Pro od 1.6.2
 | Wartości | Domyślnie | Przykład |
 | :------: | :------: | :------: |
 | Y, N | selfhost:N, otherwise:Y | `enable-ipv6-punch=N` |
+
+### enable-webrtc
+
+Włącza połączenia P2P WebRTC. Podobnie jak przebijanie NAT przez UDP i połączenia P2P IPv6, ta opcja jest domyślnie wyłączona dla serwerów hostowanych samodzielnie. Ustaw `enable-webrtc=Y`, aby ją jawnie włączyć.
+
+**Lokalizacja**:
+
+1. **K. stacjonarny** Ustawienia → Ogólne → Inne → Włącz połączenie P2P WebRTC
+2. **Smartfon** Ustawienia → Włącz połączenie P2P WebRTC
+
+Dostępne od wersji RustDesk 1.5.0, RustDesk Server Pro 1.8.7
+
+| Wartości | Domyślnie | Przykład |
+| :------: | :------: | :------: |
+| Y, N | selfhost:N, otherwise:Y | `enable-webrtc=Y` |
+
+### relay-fallback-delay
+
+Czas w sekundach, przez jaki już nawiązane połączenie przez przekaźnik czeka na bezpośrednie połączenie WebRTC, zanim zostanie użyty przekaźnik. Zwiększ tę wartość, aby dać wolnemu połączeniu bezpośredniemu więcej czasu; zmniejsz ją, aby wcześniej użyć przekaźnika, gdy nie można nawiązać połączenia bezpośredniego.
+
+Ma zastosowanie tylko wtedy, gdy WebRTC jest włączone (`enable-webrtc`). Pole w kliencie stacjonarnym jest ukryte, gdy WebRTC jest wyłączone. Pozostaw je puste, aby użyć wartości domyślnej 2.5 sekundy. Nieprawidłowe wartości, zero lub wartości ujemne również powodują użycie wartości domyślnej.
+
+**Lokalizacja**:
+
+**K. stacjonarny** Ustawienia → Ogólne → Inne → Włącz połączenie P2P WebRTC → Opóźnienie przed przejściem na przekaźnik w sekundach
+
+Dostępne od wersji RustDesk 1.5.0
+
+| Wartości | Domyślnie | Przykład |
+| :------: | :------: | :------: |
+| Dodatnia liczba sekund lub puste pole | 2.5 | `relay-fallback-delay=2.5` |
 
 ## Ustawienia wyświetlania
 
@@ -1218,6 +1288,18 @@ https://github.com/rustdesk/rustdesk/discussions/7956
 | Wartości | Domyślnie | Przykład |
 | :------: | :------: | :------: |
 | Y, N | Y | `remove-preset-password-warning=Y` |
+
+### hide-general-settings
+
+Kontroluje, czy ukrywać kartę `Ogólne` na stronie ustawień. W przeciwieństwie do pozostałych opcji `hide-*-settings` ta działa również wtedy, gdy opcja `Wyłącz ustawienia` jest włączona, ponieważ `Wyłącz ustawienia` nie ukrywa karty `Ogólne`.
+
+https://github.com/rustdesk/rustdesk-server-pro/issues/1001
+
+Dostępne od RustDesk 1.5.0
+
+| Wartości | Domyślnie | Przykład |
+| :------: | :------: | :------: |
+| Y, N | N | `hide-general-settings=Y` |
 
 ### hide-security-settings / hide-network-settings / hide-server-settings / hide-proxy-settings / hide-websocket-settings / hide-remote-printer-settings
 

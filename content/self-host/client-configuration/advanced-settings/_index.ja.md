@@ -269,6 +269,25 @@ IPホワイトリストを使用します。
 | :------: | :------: | :------: | :------: |
 | N | `,` または `<ip1>,<ip2>,<ip3>` | `,` はフィルタなしを意味 | `whitelist=,` |
 
+CIDR 表記に対応しています。例: `whitelist=192.168.1.0/24,10.0.0.5`
+
+### id-whitelist
+
+ID ホワイトリストを使用します。リストにある ID のみがこのデバイスに接続できます。
+
+ワイルドカードが使用できます。`*` は任意の数の文字、`?` はちょうど1文字に一致します。大文字と小文字は区別されません。
+
+**注意**: ID は接続するクライアントから申告されるため、認証の仕組みではありません。このホワイトリストは露出を減らすもので、パスワードや 2FA の代わりにはなりません。
+
+**場所**：
+
+1. **デスクトップ** 設定 → セキュリティ → セキュリティ → ID ホワイトリストを使用する
+2. **モバイル** 設定 → 画面共有 → ID ホワイトリストを使用する
+
+| インストール必要 | 値 | デフォルト | 例 | バージョン |
+| :------: | :------: | :------: | :------: | :------: |
+| N | `,` または `<id1>,<id2>,<id3>` | `,` はフィルタなしを意味 | `id-whitelist=123456789,98765432?,abc*` | >= 1.5.0 |
+
 ### allow-auto-disconnect & auto-disconnect-timeout
 
 ユーザーの非アクティブ期間後に着信セッションを自動的に閉じます。
@@ -419,9 +438,19 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 | :------: | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-auto-record-outgoing=Y` | >= 1.3.2 |
 
+### hide-recording-button
+
+制御側のリモートセッションで録画ボタンを非表示にします。録画自体は無効になりません。発信セッションの自動録画が有効な場合、セッションは引き続き録画されますが、ユーザーはセッションツールバーから録画を停止できません。
+
+| インストール必要 | 値 | デフォルト | 例 |
+| :------: | :------: | :------: | :------: |
+| N | Y, N | N | `hide-recording-button=Y` |
+
 ### video-save-directory
 
 録画されたビデオを保存するディレクトリ。
+
+インストール済みのWindowsサービスによって被制御側で作成される録画には、[`windows-service-video-save-directory`](#windows-service-video-save-directory)を使用してください。
 
 **場所**：
 
@@ -437,9 +466,19 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 
 **注意**：**app_name**を現在のアプリ名に置き換えてください。
 
+### windows-service-video-save-directory
+
+インストール済みのWindowsクライアントがサービスとして実行されているときに録画を保存するディレクトリ。パスは絶対パスでなければなりません。空または相対パスは無視され、RustDeskは代わりにデフォルトのディレクトリを使用します。
+
+| インストール必要 | 値 | デフォルト | 例 |
+| :------: | :------: | :------: | :------: |
+| Y | Windowsの絶対パス | `<システムドライブ>\ProgramData\<app_name>\recording` | `windows-service-video-save-directory=D:\RustDesk\recordings` |
+
 ### allow-auto-update
 
 自動更新を許可します。有効にすると、新しいバージョンが利用可能になったときに、クライアントはGitHubの公式リリースから最新バージョンを自動的にダウンロードしてインストールします。
+
+この設定は、Windows で接続タイプが双方向 (Bidirectional) または受信 (Incoming) に設定されている場合にのみ適用されます。送信 (Outgoing) には適用されません。
 
 **場所**：
 
@@ -513,21 +552,6 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 | インストール必要 | 値 | デフォルト | 例 |
 | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-always-software-render=N` |
-
-### allow-linux-headless
-
-ディスプレイがない場合の着信接続を許可します。
-
-このオプションはデスクトップ環境、Xorgサーバー、GDMが必要です。[PR 3902](https://github.com/rustdesk/rustdesk/pull/3902)を参照してください。
-
-**場所**：
-
-1. **デスクトップ** 設定 → 一般 → その他 → Linux headlessを許可
-2. **モバイル**
-
-| インストール必要 | 値 | デフォルト | 例 |
-| :------: | :------: | :------: | :------: |
-| Y | Y, N | N | `allow-linux-headless=N` |
 
 ### enable-hwcodec
 
@@ -1043,6 +1067,21 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 | :------: | :------: | :------: |
 | Y, N | linux:Y, macOS:N, win7:N, win10+:Y | `use-texture-render=Y` |
 
+### enable-tcp-punch
+
+TCP ホールパンチを有効にします。セルフホストサーバーと公開サーバーのどちらでも、デフォルトで有効です。
+
+**場所**:
+
+1. **デスクトップ** 設定 → 一般 → その他 → TCP ホールパンチを有効化する
+2. **モバイル** 設定 → TCP ホールパンチを有効化する
+
+RustDesk 1.5.0 から利用可能
+
+| 値 | デフォルト | 例 |
+| :------: | :------: | :------: |
+| Y, N | Y | `enable-tcp-punch=N` |
+
 ### enable-udp-punch
 
 **場所**:
@@ -1054,7 +1093,7 @@ RustDesk 1.4.1, RustDesk Server Pro 1.6.2から利用可能
 
 | 値 | デフォルト | 例 |
 | :------: | :------: | :------: |
-| Y, N | Y | `enable-udp-punch=N` |
+| Y, N | セルフホスト:N, その他:Y | `enable-udp-punch=N` |
 
 ### enable-ipv6-punch
 
@@ -1068,6 +1107,37 @@ RustDesk 1.4.1, RustDesk Server Pro 1.6.2から利用可能
 | 値 | デフォルト | 例 |
 | :------: | :------: | :------: |
 | Y, N | セルフホスト:N, その他:Y | `enable-ipv6-punch=N` |
+
+### enable-webrtc
+
+WebRTC P2P 接続を有効にします。UDP ホールパンチや IPv6 P2P 接続と同様に、セルフホストサーバーではデフォルトで無効です。明示的に有効にするには `enable-webrtc=Y` を設定してください。
+
+**場所**:
+
+1. **デスクトップ** 設定 → 一般 → その他 → WebRTC P2P 接続を有効化する
+2. **モバイル** 設定 → WebRTC P2P 接続を有効化する
+
+RustDesk 1.5.0, RustDesk Server Pro 1.8.7 から利用可能
+
+| 値 | デフォルト | 例 |
+| :------: | :------: | :------: |
+| Y, N | セルフホスト:N, その他:Y | `enable-webrtc=Y` |
+
+### relay-fallback-delay
+
+すでに確立された中継接続を使用する前に、直接の WebRTC 接続を待つ時間を秒単位で指定します。値を大きくすると、確立に時間のかかる直接接続をより長く待ちます。値を小さくすると、直接接続を確立できない場合に、より早く中継接続を使用します。
+
+WebRTC が有効な場合にのみ適用されます（`enable-webrtc`）。WebRTC が無効な場合、デスクトップクライアントの入力欄は非表示になります。空欄にすると、デフォルトの 2.5 秒が使用されます。無効な値、ゼロ、負の値の場合もデフォルト値が使用されます。
+
+**場所**:
+
+**デスクトップ** 設定 → 一般 → その他 → WebRTC P2P 接続を有効化する → 中継に切り替えるまでの待ち時間 (秒)
+
+RustDesk 1.5.0 から利用可能
+
+| 値 | デフォルト | 例 |
+| :------: | :------: | :------: |
+| 正の秒数、または空欄 | 2.5 | `relay-fallback-delay=2.5` |
 
 ## その他
 
@@ -1217,6 +1287,18 @@ https://github.com/rustdesk/rustdesk/discussions/7956
 | 値 | デフォルト | 例 |
 | :------: | :------: | :------: |
 | Y, N | Y | `remove-preset-password-warning=Y` |
+
+### hide-general-settings
+
+設定ページの`一般`タブを非表示にするかどうかを制御します。他の`hide-*-settings`オプションとは異なり、`設定を無効にする`がオンの場合でも動作します。`設定を無効にする`は`一般`タブを非表示にしないためです。
+
+https://github.com/rustdesk/rustdesk-server-pro/issues/1001
+
+RustDesk 1.5.0 以降で利用可能
+
+| 値 | デフォルト | 例 |
+| :------: | :------: | :------: |
+| Y, N | N | `hide-general-settings=Y` |
 
 ### hide-security-settings / hide-network-settings / hide-server-settings / hide-proxy-settings / hide-websocket-settings / hide-remote-printer-settings
 

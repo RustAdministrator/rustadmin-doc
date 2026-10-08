@@ -270,6 +270,25 @@ RustDesk 自定义客户端中的高级设置允许管理员在发布前预定�
 | :------: | :------: | :------: | :------: |
 | 否 | `,` 或 `<ip1>,<ip2>,<ip3>` | `,` 表示无过滤 | `whitelist=,` |
 
+支持 CIDR 写法，例如 `whitelist=192.168.1.0/24,10.0.0.5`。
+
+### id-whitelist
+
+使用 ID 白名单。只有列表中的 ID 才能连接本设备。
+
+支持通配符：`*` 匹配任意数量的字符，`?` 匹配单个字符。匹配不区分大小写。
+
+**注意**：ID 由对端客户端上报，因此它不是认证机制。白名单用于减少暴露面，不能替代密码或 2FA。
+
+**位置**：
+
+1. **桌面** 设置 → 安全 → 安全 → 只允许白名单上的 ID 访问
+2. **移动端** 设置 → 屏幕共享 → 只允许白名单上的 ID 访问
+
+| 安装需要 | 值 | 默认值 | 示例 | 版本 |
+| :------: | :------: | :------: | :------: | :------: |
+| 否 | `,` 或 `<id1>,<id2>,<id3>` | `,` 表示无过滤 | `id-whitelist=123456789,98765432?,abc*` | >= 1.5.0 |
+
 ### allow-auto-disconnect & auto-disconnect-timeout
 
 在用户不活动一段时间后自动关闭传入会话。
@@ -420,9 +439,19 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 | :------: | :------: | :------: | :------: | :------: |
 | 否 | Y, N | N | `allow-auto-record-outgoing=Y` | >= 1.3.2 |
 
+### hide-recording-button
+
+在控制端的远程会话中隐藏录制按钮。这不会禁用录制。如果启用了自动录制传出会话，会话仍会被录制，但用户无法从会话工具栏停止录制。
+
+| 安装需要 | 值 | 默认值 | 示例 |
+| :------: | :------: | :------: | :------: |
+| 否 | Y, N | N | `hide-recording-button=Y` |
+
 ### video-save-directory
 
 保存录制视频的目录。
+
+对于已安装的 Windows 服务在被控端进行的录像，请使用 [`windows-service-video-save-directory`](#windows-service-video-save-directory)。
 
 **位置**：
 
@@ -438,9 +467,19 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 
 **注意**：替换**app_name**表示当前应用名称。
 
+### windows-service-video-save-directory
+
+已安装的 Windows 客户端作为服务运行时，用于保存录像的目录。路径必须是绝对路径。空路径或相对路径将被忽略，RustDesk 会改用默认目录。
+
+| 安装需要 | 值 | 默认值 | 示例 |
+| :------: | :------: | :------: | :------: |
+| 是 | Windows 绝对路径 | `<系统盘>\ProgramData\<app_name>\recording` | `windows-service-video-save-directory=D:\RustDesk\recordings` |
+
 ### allow-auto-update
 
 允许自动更新。启用后，当有新版本发布时，客户端会自动从 GitHub 官方发布页面下载并安装最新版本。
+
+此设置仅在 Windows 下，且连接类型设置为双向 (Bidirectional) 或入站 (Incoming) 时生效，对出站 (Outgoing) 不生效。
 
 **位置**：
 
@@ -514,21 +553,6 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 | 安装需要 | 值 | 默认值 | 示例 |
 | :------: | :------: | :------: | :------: |
 | 否 | Y, N | N | `allow-always-software-render=N` |
-
-### allow-linux-headless
-
-如果没有显示器，允许传入连接。
-
-此选项需要桌面环境、Xorg服务器和GDM，请参阅[PR 3902](https://github.com/rustdesk/rustdesk/pull/3902)。
-
-**位置**：
-
-1. **桌面** 设置 → 常规 → 其他 → 允许Linux无头模式
-2. **移动端**
-
-| 安装需要 | 值 | 默认值 | 示例 |
-| :------: | :------: | :------: | :------: |
-| 是 | Y, N | N | `allow-linux-headless=N` |
 
 ### enable-hwcodec
 
@@ -626,6 +650,21 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 | :------: | :------: | :------: |
 | Y, N | linux:Y, macOS:N, win7:N, win10+:Y | `use-texture-render=Y` |
 
+### enable-tcp-punch
+
+启用 TCP 打洞。使用自建服务器或公共服务器时均默认启用。
+
+**位置**:
+
+1. **桌面端** 设置 → 通用 → 其他 → 启用 TCP 打洞
+2. **移动端** 设置 → 启用 TCP 打洞
+
+自 RustDesk 1.5.0 起可用
+
+| 可选值 | 默认值 | 示例 |
+| :------: | :------: | :------: |
+| Y, N | Y | `enable-tcp-punch=N` |
+
 ### enable-udp-punch
 
 **位置**:
@@ -637,7 +676,7 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 
 | 可选值 | 默认值 | 示例 |
 | :------: | :------: | :------: |
-| Y, N | Y | `enable-udp-punch=N` |
+| Y, N | selfhost:N, 其它:Y | `enable-udp-punch=N` |
 
 ### enable-ipv6-punch
 
@@ -651,6 +690,37 @@ ar, bg, ca, cs, da, de, el, en, eo, es, et, fa, fr, he, hr, hu, id, it, ja, ko, 
 | 可选值 | 默认值 | 示例 |
 | :------: | :------: | :------: |
 | Y, N | selfhost:N, 其它:Y | `enable-ipv6-punch=N` |
+
+### enable-webrtc
+
+启用 WebRTC P2P 连接。与 UDP 打洞和 IPv6 P2P 连接一样，使用自建服务器时默认禁用。设置 `enable-webrtc=Y` 可显式启用。
+
+**位置**:
+
+1. **桌面端** 设置 → 通用 → 其他 → 启用 WebRTC P2P 连接
+2. **移动端** 设置 → 启用 WebRTC P2P 连接
+
+自 RustDesk 1.5.0, RustDesk Server Pro 1.8.7 起可用
+
+| 可选值 | 默认值 | 示例 |
+| :------: | :------: | :------: |
+| Y, N | selfhost:N, 其它:Y | `enable-webrtc=Y` |
+
+### relay-fallback-delay
+
+指定已建立的中继连接在被使用前等待 WebRTC 直连的时间，单位为秒。调大此值可给较慢的直连更多时间；调小则可在无法建立直连时更快使用中继。
+
+仅在启用 WebRTC（`enable-webrtc`）时生效。禁用 WebRTC 时，桌面客户端会隐藏此输入框。留空使用默认值 2.5 秒。无效值、零或负数也会使用默认值。
+
+**位置**:
+
+**桌面端** 设置 → 通用 → 其他 → 启用 WebRTC P2P 连接 → 回落到中继前的等待时间（秒）
+
+自 RustDesk 1.5.0 起可用
+
+| 可选值 | 默认值 | 示例 |
+| :------: | :------: | :------: |
+| 正数（秒），或留空 | 2.5 | `relay-fallback-delay=2.5` |
 
 ## 显示设置
 
@@ -1207,6 +1277,18 @@ https://github.com/rustdesk/rustdesk/discussions/7956
 | 值 | 默认值 | 示例 |
 | :------: | :------: | :------: |
 | Y, N | Y | `remove-preset-password-warning=Y` |
+
+### hide-general-settings
+
+控制是否隐藏设置页面的`常规`选项卡。与其他 `hide-*-settings` 选项不同，即使`禁用设置`已开启，此选项依然生效，因为`禁用设置`不会隐藏`常规`选项卡。
+
+https://github.com/rustdesk/rustdesk-server-pro/issues/1001
+
+自 RustDesk 1.5.0 版本起可用
+
+| 值 | 默认值 | 示例 |
+| :------: | :------: | :------: |
+| Y, N | N | `hide-general-settings=Y` |
 
 ### hide-security-settings / hide-network-settings / hide-server-settings / hide-proxy-settings / hide-websocket-settings / hide-remote-printer-settings
 

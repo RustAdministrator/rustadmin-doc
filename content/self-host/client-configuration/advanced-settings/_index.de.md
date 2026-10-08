@@ -269,6 +269,25 @@ IP-Whitelist verwenden.
 | :------: | :------: | :------: | :------: |
 | N | `,` oder `<ip1>,<ip2>,<ip3>` | `,` bedeutet kein Filter | `whitelist=,` |
 
+Die CIDR-Notation wird unterstützt, z. B. `whitelist=192.168.1.0/24,10.0.0.5`.
+
+### id-whitelist
+
+ID-Whitelist verwenden. Nur die aufgeführten IDs können sich mit diesem Gerät verbinden.
+
+Platzhalter werden unterstützt: `*` steht für beliebig viele Zeichen, `?` für genau ein Zeichen. Die Groß-/Kleinschreibung wird nicht beachtet.
+
+**Hinweis**: Die ID wird vom verbindenden Client gemeldet und ist daher kein Authentifizierungsmerkmal. Diese Whitelist verringert die Angriffsfläche, ersetzt aber weder Passwort noch 2FA.
+
+**Ort**:
+
+1. **Desktop** Einstellungen → Sicherheit → Sicherheit → ID-Whitelist verwenden
+2. **Mobil** Einstellungen → Bildschirm teilen → ID-Whitelist verwenden
+
+| Installation erforderlich | Werte | Standard | Beispiel | Version |
+| :------: | :------: | :------: | :------: | :------: |
+| N | `,` oder `<id1>,<id2>,<id3>` | `,` bedeutet kein Filter | `id-whitelist=123456789,98765432?,abc*` | >= 1.5.0 |
+
 ### allow-auto-disconnect & auto-disconnect-timeout
 
 Eingehende Sitzungen nach einer Zeit der Benutzerinaktivität automatisch schließen.
@@ -419,9 +438,19 @@ Ausgehende Sitzungen automatisch aufzeichnen.
 | :------: | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-auto-record-outgoing=Y` | >= 1.3.2 |
 
+### hide-recording-button
+
+Blendet die Aufzeichnungsschaltfläche in Remotesitzungen auf der steuernden Seite aus. Dadurch wird die Aufzeichnung nicht deaktiviert. Wenn die automatische Aufzeichnung ausgehender Sitzungen aktiviert ist, werden Sitzungen weiterhin aufgezeichnet, Benutzer können die Aufzeichnung jedoch nicht über die Sitzungssymbolleiste beenden.
+
+| Installation erforderlich | Werte | Standard | Beispiel |
+| :------: | :------: | :------: | :------: |
+| N | Y, N | N | `hide-recording-button=Y` |
+
 ### video-save-directory
 
 Das Verzeichnis zum Speichern aufgezeichneter Videos.
+
+Für Aufzeichnungen, die der installierte Windows-Dienst auf der gesteuerten Seite erstellt, verwenden Sie [`windows-service-video-save-directory`](#windows-service-video-save-directory).
 
 **Ort**:
 
@@ -437,9 +466,19 @@ Standardwerte:
 
 **Hinweis**: Ersetzen Sie **app_name** durch den aktuellen App-Namen.
 
+### windows-service-video-save-directory
+
+Das Verzeichnis, in dem ein installierter Windows-Client Aufzeichnungen speichert, wenn er als Dienst ausgeführt wird. Der Pfad muss absolut sein. Ein leerer oder relativer Pfad wird ignoriert und RustDesk verwendet stattdessen das Standardverzeichnis.
+
+| Installation erforderlich | Werte | Standard | Beispiel |
+| :------: | :------: | :------: | :------: |
+| Y | Absoluter Windows-Pfad | `<Systemlaufwerk>\ProgramData\<app_name>\recording` | `windows-service-video-save-directory=D:\RustDesk\recordings` |
+
 ### allow-auto-update
 
 Automatische Updates zulassen. Wenn aktiviert, lädt der Client automatisch die neueste Version von den offiziellen GitHub-Releases herunter und installiert sie, wenn eine neue Version verfügbar ist.
+
+Diese Einstellung gilt nur unter Windows, wenn Verbindungstyp auf Bidirektional oder Eingehend gesetzt ist. Sie gilt nicht für Ausgehend.
 
 **Ort**:
 
@@ -513,21 +552,6 @@ Immer Software-Rendering verwenden.
 | Installation erforderlich | Werte | Standard | Beispiel |
 | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-always-software-render=N` |
-
-### allow-linux-headless
-
-Eingehende Verbindung zulassen, wenn keine Displays vorhanden sind.
-
-Diese Option erfordert eine Desktop-Umgebung, Xorg-Server und GDM, siehe [PR 3902](https://github.com/rustdesk/rustdesk/pull/3902).
-
-**Ort**:
-
-1. **Desktop** Einstellungen → Allgemein → Sonstiges → Linux headless zulassen
-2. **Mobil**
-
-| Installation erforderlich | Werte | Standard | Beispiel |
-| :------: | :------: | :------: | :------: |
-| Y | Y, N | N | `allow-linux-headless=N` |
 
 ### enable-hwcodec
 
@@ -625,6 +649,21 @@ Verwenden Sie Textur-Rendering, um die Bilder flüssiger zu machen. Sie können 
 | :------: | :------: | :------: |
 | Y, N | linux:Y, macOS:N, win7:N, win10+:Y | `use-texture-render=Y` |
 
+### enable-tcp-punch
+
+TCP-Hole-Punching aktivieren. Standardmäßig sowohl für selbst gehostete als auch für öffentliche Server aktiviert.
+
+**Speicherort**:
+
+1. **Desktop** Einstellungen → Allgemein → Sonstiges → TCP-Hole-Punching aktivieren
+2. **Mobil** Einstellungen → TCP-Hole-Punching aktivieren
+
+Verfügbar seit RustDesk 1.5.0
+
+| Werte | Standard | Beispiel |
+| :------: | :------: | :------: |
+| Y, N | Y | `enable-tcp-punch=N` |
+
 ### enable-udp-punch
 
 **Speicherort**:
@@ -636,7 +675,7 @@ Verfügbar seit RustDesk 1.4.1, RustDesk Server Pro 1.6.2
 
 | Werte | Standard | Beispiel |
 | :------: | :------: | :------: |
-| Y, N | Y | `enable-udp-punch=N` |
+| Y, N | selfhost:N, sonst:Y | `enable-udp-punch=N` |
 
 ### enable-ipv6-punch
 
@@ -650,6 +689,37 @@ Verfügbar seit RustDesk 1.4.1, RustDesk Server Pro 1.6.2
 | Werte | Standard | Beispiel |
 | :------: | :------: | :------: |
 | Y, N | selfhost:N, sonst:Y | `enable-ipv6-punch=N` |
+
+### enable-webrtc
+
+WebRTC-P2P-Verbindungen aktivieren. Wie UDP-Hole-Punching und IPv6-P2P-Verbindungen ist diese Option für selbst gehostete Server standardmäßig deaktiviert. Setzen Sie `enable-webrtc=Y`, um sie ausdrücklich zu aktivieren.
+
+**Speicherort**:
+
+1. **Desktop** Einstellungen → Allgemein → Sonstiges → WebRTC-P2P-Verbindung aktivieren
+2. **Mobil** Einstellungen → WebRTC-P2P-Verbindung aktivieren
+
+Verfügbar seit RustDesk 1.5.0, RustDesk Server Pro 1.8.7
+
+| Werte | Standard | Beispiel |
+| :------: | :------: | :------: |
+| Y, N | selfhost:N, sonst:Y | `enable-webrtc=Y` |
+
+### relay-fallback-delay
+
+Wie lange eine bereits aufgebaute Relaisverbindung auf eine direkte WebRTC-Verbindung wartet, bevor das Relais verwendet wird, in Sekunden. Erhöhen Sie den Wert, um einer langsamen direkten Verbindung mehr Zeit zu geben; verringern Sie ihn, um das Relais früher zu verwenden, wenn keine direkte Verbindung hergestellt werden kann.
+
+Gilt nur, wenn WebRTC aktiviert ist (`enable-webrtc`). Das Eingabefeld im Desktop-Client wird ausgeblendet, wenn WebRTC deaktiviert ist. Lassen Sie es leer, um den Standardwert von 2.5 Sekunden zu verwenden. Ungültige Werte, null oder negative Werte führen ebenfalls zum Standardwert.
+
+**Speicherort**:
+
+**Desktop** Einstellungen → Allgemein → Sonstiges → WebRTC-P2P-Verbindung aktivieren → Verzögerung bis zum Relais in Sekunden
+
+Verfügbar seit RustDesk 1.5.0
+
+| Werte | Standard | Beispiel |
+| :------: | :------: | :------: |
+| Positive Anzahl von Sekunden oder leer | 2.5 | `relay-fallback-delay=2.5` |
 
 ## Anzeigeeinstellungen
 
@@ -1206,6 +1276,18 @@ https://github.com/rustdesk/rustdesk/discussions/7956
 | Werte | Standard | Beispiel |
 | :------: | :------: | :------: |
 | Y, N | Y | `remove-preset-password-warning=Y` |
+
+### hide-general-settings
+
+Steuert, ob die Registerkarte `Allgemein` der Einstellungsseite ausgeblendet wird. Anders als die anderen `hide-*-settings`-Optionen funktioniert diese auch, wenn `Einstellungen deaktivieren` eingeschaltet ist, da `Einstellungen deaktivieren` die Registerkarte `Allgemein` nicht ausblendet.
+
+https://github.com/rustdesk/rustdesk-server-pro/issues/1001
+
+Verfügbar seit RustDesk 1.5.0
+
+| Werte | Standard | Beispiel |
+| :------: | :------: | :------: |
+| Y, N | N | `hide-general-settings=Y` |
 
 ### hide-security-settings / hide-network-settings / hide-server-settings / hide-proxy-settings / hide-websocket-settings / hide-remote-printer-settings
 

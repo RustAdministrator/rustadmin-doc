@@ -35,7 +35,44 @@ Puteți rula mai multe servere relay distribuite geografic și folosi GeoLocatio
 Problemă cunoscută: https://github.com/rustdesk/rustdesk/discussions/7934
 {{% /notice %}}
 
-> Veți avea nevoie de perechea de chei private `id_ed25519` și `id_ed25519.pub`.
+> Setați variabila de mediu `KEY` a procesului `hbbr` la cheia publică din `id_ed25519.pub` sau copiați `id_ed25519` și `id_ed25519.pub` pe serverul relay.
+
+### Docker Compose
+
+Un server relay suplimentar are nevoie doar de `hbbr`; `hbbs` și `depends_on` nu sunt necesare. Alegeți una dintre următoarele metode de configurare a cheii:
+
+- Păstrați secțiunea `environment` și setați `KEY` la conținutul fișierului `id_ed25519.pub`, după cum se arată mai jos.
+- Eliminați întreaga secțiune `environment` și plasați `id_ed25519` și `id_ed25519.pub` în `./data`.
+
+Creați un fișier `compose.yml` cu următorul conținut.
+
+```yaml
+services:
+  hbbr:
+    container_name: hbbr
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    environment:
+      KEY: "<PUBLIC_KEY>"
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+```
+
+### Docker
+
+#### Setarea cheii printr-o variabilă de mediu
+
+Setați `KEY` la conținutul fișierului `id_ed25519.pub`.
+
+```bash
+# sudo docker run --name hbbr -e KEY="<PUBLIC_KEY>" -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+#### Utilizarea fișierelor cu chei
+
+Exemplul Docker de mai jos utilizează metoda bazată pe fișierele cu chei.
 
 1 - Dacă Docker este deja instalat, conectați‑vă la server prin SSH și creați un volume pentru `hbbr`.
 
@@ -57,8 +94,18 @@ Sintaxa comenzii este `scp <path/filename> username@server:</destination/path>`.
 3 - Desfășurați containerul `hbbr` folosind volumul creat anterior. Acest volume conține perechea de chei private necesară pentru a rula serverul relay privat.
 
 ```
+# sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+Imaginea `rustdesk/rustdesk-server` acceptă în continuare `-k <KEY>`. Pentru a utiliza fișierul cheii montat, rulați-o cu `-k _`:
+
+```bash
 # sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server hbbr -k _
 ```
+
+Aici, `_` este o valoare specială, nu cheia propriu-zisă. Aceasta indică procesului `hbbr` să încarce sau să genereze `id_ed25519`, să obțină cheia publică din acesta și să o utilizeze pentru validarea solicitărilor relay. Versiunile RustDesk Server Pro anterioare versiunii 1.8.6 acceptau, de asemenea, `-k _` pentru a încărca `id_ed25519`.
+
+Începând cu RustDesk Server Pro 1.8.6, opțiunea `-k` a procesului `hbbr` este perimată și ignorată. Dacă `KEY` nu este setată, `hbbr` obține cheia publică din `id_ed25519` sau o citește din `id_ed25519.pub` dacă fișierul cheii private nu există. Dacă niciunul dintre fișiere nu există, `hbbr` rulează în modul relay public.
 
 4 - Verificați jurnalele pentru a confirma că `hbbr` rulează folosind perechea de chei.
 

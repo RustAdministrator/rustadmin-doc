@@ -20,8 +20,8 @@ Serwer RustDesk Pro oferuje więcej funkcji w porównaniu z wersją open source.
 - [Konsola webowa](https://rustdesk.com/docs/pl/self-host/rustdesk-server-pro/console/)
 - [API](https://github.com/rustdesk/rustdesk/wiki/FAQ#api-of-rustdesk-server-pro)
 - Integracje: [OIDC](https://rustdesk.com/docs/pl/self-host/rustdesk-server-pro/oidc/), [LDAP](https://rustdesk.com/docs/pl/self-host/rustdesk-server-pro/ldap/), [2FA](https://rustdesk.com/docs/pl/self-host/rustdesk-server-pro/2fa/)
-- Książka adresowa
-- Zarządzanie logami (połączenia, transfer plików, alarmy itp.)
+- [Książka adresowa](/docs/pl/self-host/rustdesk-server-pro/address-book/)
+- [Zarządzanie logami](/docs/pl/self-host/rustdesk-server-pro/audit-logs/) (połączenia, transfer plików, alarmy itp.)
 - Zarządzanie urządzeniami
 - [Synchronizacja ustawień bezpieczeństwa](https://rustdesk.com/docs/pl/self-host/rustdesk-server-pro/strategy/)
 - [Kontrola dostępu](https://rustdesk.com/docs/pl/self-host/rustdesk-server-pro/permissions/)

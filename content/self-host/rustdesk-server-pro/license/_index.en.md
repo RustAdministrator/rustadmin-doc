@@ -19,6 +19,10 @@ RustDesk Server Pro licensing is tied to the `hbbs` server, not to every relay n
 - Migration is done by unbinding the old machine and setting the license on the new server
 - If the server cannot reach the internet directly, you can configure a proxy for license verification
 
+{{% notice note %}}
+Related reading: [what counts as a managed device](https://rustdesk.com/blog/what-counts-as-a-managed-device), and [upgrading a license mid-subscription](https://rustdesk.com/blog/upgrade-rustdesk-license-mid-subscription).
+{{% /notice %}}
+
 ## Buy license
 
 Please get your license from [https://rustdesk.com/pricing.html](https://rustdesk.com/pricing.html), enter a valid email address in the Stripe checkout page. The license (and the invoice in a separate mail) will be sent to your email once payment is done successfully.

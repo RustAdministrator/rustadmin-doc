@@ -9,6 +9,10 @@ weight: 600
 
 This FAQ covers the most common RustDesk Server Pro tasks: installation, conversion from OSS, upgrades, license migration, logging, SMTP issues, and device-management problems. If you are starting from scratch, begin with the [installation guide](/docs/en/self-host/rustdesk-server-pro/installscript/). If you already have a running server, the most common follow-up pages are [License](/docs/en/self-host/rustdesk-server-pro/license/), [SMTP](/docs/en/self-host/rustdesk-server-pro/smtp/), and [Client Deployment](/docs/en/self-host/client-deployment/).
 
+{{% notice note %}}
+Troubleshooting help: ["connected, waiting for image"](https://rustdesk.com/blog/rustdesk-connected-waiting-for-image).
+{{% /notice %}}
+
 ## Which page should you use for each common task?
 
 | Task | Best page |
@@ -25,7 +29,7 @@ This FAQ covers the most common RustDesk Server Pro tasks: installation, convers
 1. Get your license from [https://rustdesk.com/pricing.html](https://rustdesk.com/pricing.html), check [license](https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/license/) page for more details.
 2. Spin up a VPS, bare metal or Linux VM.
 3. If you want to use DNS and SSL create a DNS name i.e. `rustdesk.yourdomain.com`.
-4. [This page](https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/installscript/#install).
+4. [This page](https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/installscript/#method-2-installsh).
 5. Copy and paste the command into your Linux terminal.
 6. Follow the prompts as they guide you through the install.
 7. Once the install is complete `https://rustdesk.yourdomain.com` or `http://youripaddress:21114`.
@@ -192,7 +196,7 @@ sudo systemctl stop rustdesk-hbbr.service
 sudo systemctl disable rustdesk-hbbr.service
 sudo systemctl daemon-reload
 sudo rm /etc/systemd/system/rustdesk-hbbs.service
-sudo rm etc/systemd/system/rustdesk-hbbr.service
+sudo rm /etc/systemd/system/rustdesk-hbbr.service
 sudo rm /usr/bin/hbbs
 sudo rm /usr/bin/hbbr
 sudo rm -rf /var/lib/rustdesk-server/

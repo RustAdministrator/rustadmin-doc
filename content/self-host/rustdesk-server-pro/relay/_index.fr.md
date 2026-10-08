@@ -35,7 +35,44 @@ Vous pouvez avoir plusieurs serveurs de relais fonctionnant à travers le globe 
 Problème connu : https://github.com/rustdesk/rustdesk/discussions/7934
 {{% /notice %}}
 
-> Vous aurez besoin de la paire de clés privées `id_ed25519` et `id_ed25519.pub`.
+> Définissez la variable d’environnement `KEY` de `hbbr` sur la clé publique contenue dans `id_ed25519.pub`, ou copiez `id_ed25519` et `id_ed25519.pub` sur le serveur de relais.
+
+### Docker Compose
+
+Un serveur de relais supplémentaire n’a besoin que de `hbbr` ; `hbbs` et `depends_on` ne sont pas nécessaires. Choisissez l’une des méthodes de configuration de clé suivantes :
+
+- Conservez la section `environment` et définissez `KEY` sur le contenu de `id_ed25519.pub`, comme illustré ci-dessous.
+- Supprimez toute la section `environment` et placez `id_ed25519` et `id_ed25519.pub` dans `./data`.
+
+Créez un fichier `compose.yml` avec le contenu suivant.
+
+```yaml
+services:
+  hbbr:
+    container_name: hbbr
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    environment:
+      KEY: "<PUBLIC_KEY>"
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+```
+
+### Docker
+
+#### Définir la clé avec une variable d’environnement
+
+Définissez `KEY` sur le contenu de `id_ed25519.pub`.
+
+```bash
+# sudo docker run --name hbbr -e KEY="<PUBLIC_KEY>" -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+#### Utiliser les fichiers de clés
+
+L’exemple Docker ci-dessous utilise la méthode des fichiers de clés.
 
 1 - Si docker est déjà installé, connectez-vous à votre serveur via SSH et créez un volume pour hbbr.
 
@@ -57,8 +94,18 @@ La syntaxe de la commande est `scp <chemin/nom_fichier> nom_utilisateur@serveur:
 3 - Déployez le conteneur hbbr en utilisant le volume précédemment créé. Ce volume contient la paire de clés privées nécessaire pour exécuter votre serveur de relais privé.
 
 ```
+# sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+L’image `rustdesk/rustdesk-server` accepte toujours `-k <KEY>`. Pour utiliser le fichier de clé monté, exécutez-la avec `-k _` :
+
+```bash
 # sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server hbbr -k _
 ```
+
+Ici, `_` est une valeur spéciale, et non la clé elle-même. Elle indique à `hbbr` de charger ou générer `id_ed25519`, d’en dériver la clé publique et d’utiliser cette clé pour valider les demandes de relais. Les versions de RustDesk Server Pro antérieures à 1.8.6 acceptaient également `-k _` pour charger `id_ed25519`.
+
+À partir de RustDesk Server Pro 1.8.6, l’option `-k` de `hbbr` est obsolète et ignorée. Si `KEY` n’est pas définie, `hbbr` dérive la clé publique de `id_ed25519` ou la lit dans `id_ed25519.pub` si le fichier de clé privée n’existe pas. Si aucun des deux fichiers n’existe, `hbbr` fonctionne en mode relais public.
 
 4 - Vérifiez les journaux d'exécution pour vérifier que hbbr fonctionne en utilisant votre paire de clés.
 

@@ -279,6 +279,25 @@ Use IP Whitelisting.
 | :------: | :------: | :------: | :------: |
 | N | `,` or `<ip1>,<ip2>,<ip3>` | `,` means no filter | `whitelist=,` |
 
+CIDR notation is supported, e.g. `whitelist=192.168.1.0/24,10.0.0.5`.
+
+### id-whitelist
+
+Use ID whitelisting. Only the listed IDs can connect to this device.
+
+Wildcards are supported: `*` matches any number of characters, `?` matches exactly one character. Matching is case-insensitive.
+
+**Note**: The ID is reported by the connecting client, so it is not an authentication mechanism. This whitelist reduces exposure, it does not replace the password or 2FA.
+
+**Location**:
+
+1. **Desktop** Settings → Security → Security → Use ID whitelisting
+2. **Mobile** Settings → Share screen → Use ID whitelisting
+
+| Install required | Values | Default | Example | Version |
+| :------: | :------: | :------: | :------: | :------: |
+| N | `,` or `<id1>,<id2>,<id3>` | `,` means no filter | `id-whitelist=123456789,98765432?,abc*` | >= 1.5.0 |
+
 ### allow-auto-disconnect & auto-disconnect-timeout
 
 Automatically close incoming sessions after a period of user inactivity.
@@ -429,9 +448,19 @@ Automatically record outgoing sessions.
 | :------: | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-auto-record-outgoing=Y` | >= 1.3.2 |
 
+### hide-recording-button
+
+Hide the recording button in remote sessions on the controlling side. This does not disable recording. If automatic outgoing recording is enabled, sessions are still recorded, but users cannot stop the recording from the session toolbar.
+
+| Install required | Values | Default | Example |
+| :------: | :------: | :------: | :------: |
+| N | Y, N | N | `hide-recording-button=Y` |
+
 ### video-save-directory
 
 The directory to save recorded videos.
+
+For controlled-side recordings made by the installed Windows service, use [`windows-service-video-save-directory`](#windows-service-video-save-directory).
 
 **Location**:
 
@@ -447,9 +476,19 @@ Default values:
 
 **Note**: Replace **app_name** means current app name.
 
+### windows-service-video-save-directory
+
+The directory where an installed Windows client saves recordings when running as a service. The path must be absolute. An empty or relative path is ignored, and RustDesk uses the default directory instead.
+
+| Install required | Values | Default | Example |
+| :------: | :------: | :------: | :------: |
+| Y | Absolute Windows path | `<system drive>\ProgramData\<app_name>\recording` | `windows-service-video-save-directory=D:\RustDesk\recordings` |
+
 ### allow-auto-update
 
 Allow automatic updates. When enabled, the client will automatically download and install the latest version from GitHub official releases when a new version is available.
+
+This setting only applies on Windows when Connection type is set to Bidirectional or Incoming. It does not apply to Outgoing.
 
 **Location**:
 
@@ -523,21 +562,6 @@ Always use software rendering.
 | Install required | Values | Default | Example |
 | :------: | :------: | :------: | :------: |
 | N | Y, N | N | `allow-always-software-render=N` |
-
-### allow-linux-headless
-
-Allow incoming connection if there's no displays.
-
-This option requires desktop environment, Xorg server and GDM, see [PR 3902](https://github.com/rustdesk/rustdesk/pull/3902).
-
-**Location**:
-
-1. **Desktop** Settings → General → Other → Allow Linux headless
-2. **Mobile**
-
-| Install required | Values | Default | Example |
-| :------: | :------: | :------: | :------: |
-| Y | Y, N | N | `allow-linux-headless=N` |
 
 ### enable-hwcodec
 
@@ -635,6 +659,21 @@ Use texture rendering to make the pictures smoother. You could try disabling thi
 | :------: | :------: | :------: |
 | Y, N | linux:Y, macOS:N, win7:N, win10+:Y | `use-texture-render=Y` |
 
+### enable-tcp-punch
+
+Enable TCP hole punching. Enabled by default for both self-hosted and public servers.
+
+**Location**:
+
+1. **Desktop** Settings → General → Other → Enable TCP hole punching
+2. **Mobile** Settings → Enable TCP hole punching
+
+Available since RustDesk 1.5.0
+
+| Values | Default | Example |
+| :------: | :------: | :------: |
+| Y, N | Y | `enable-tcp-punch=N` |
+
 ### enable-udp-punch
 
 **Location**:
@@ -646,7 +685,7 @@ Available since RustDesk 1.4.1, RustDesk Server Pro 1.6.2
 
 | Values | Default | Example |
 | :------: | :------: | :------: |
-| Y, N | Y | `enable-udp-punch=N` |
+| Y, N | selfhost:N, otherwise:Y | `enable-udp-punch=N` |
 
 ### enable-ipv6-punch
 
@@ -660,6 +699,37 @@ Available since RustDesk 1.4.1, RustDesk Server Pro 1.6.2
 | Values | Default | Example |
 | :------: | :------: | :------: |
 | Y, N | selfhost:N, otherwise:Y | `enable-ipv6-punch=N` |
+
+### enable-webrtc
+
+Enable WebRTC P2P connections. As with UDP hole punching and IPv6 P2P connections, this is disabled by default for self-hosted servers. Set `enable-webrtc=Y` to enable it explicitly.
+
+**Location**:
+
+1. **Desktop** Settings → General → Other → Enable WebRTC P2P connection
+2. **Mobile** Settings → Enable WebRTC P2P connection
+
+Available since RustDesk 1.5.0, RustDesk Server Pro 1.8.7
+
+| Values | Default | Example |
+| :------: | :------: | :------: |
+| Y, N | selfhost:N, otherwise:Y | `enable-webrtc=Y` |
+
+### relay-fallback-delay
+
+How long an already-established relay connection waits for a direct WebRTC connection before the relay is used, in seconds. Increase this to give a slow direct connection more time; decrease it to use the relay sooner when a direct connection cannot be established.
+
+Only applies when WebRTC is enabled (`enable-webrtc`). The desktop field is hidden when WebRTC is disabled. Leave it empty to use the default of 2.5 seconds. Invalid, zero, or negative values also use the default.
+
+**Location**:
+
+**Desktop** Settings → General → Other → Enable WebRTC P2P connection → Relay fallback delay in seconds
+
+Available since RustDesk 1.5.0
+
+| Values | Default | Example |
+| :------: | :------: | :------: |
+| Positive number of seconds, or empty | 2.5 | `relay-fallback-delay=2.5` |
 
 ## Display Settings
 
@@ -1227,6 +1297,18 @@ https://github.com/rustdesk/rustdesk/discussions/7956
 | Values | Default | Example |
 | :------: | :------: | :------: |
 | Y, N | Y | `remove-preset-password-warning=Y` |
+
+### hide-general-settings
+
+Controls whether to hide the `General` tab of the settings page. Unlike the other `hide-*-settings` options, this one also works when `Disable settings` is enabled, because `Disable settings` does not hide the `General` tab.
+
+https://github.com/rustdesk/rustdesk-server-pro/issues/1001
+
+Available since RustDesk 1.5.0
+
+| Values | Default | Example |
+| :------: | :------: | :------: |
+| Y, N | N | `hide-general-settings=Y` |
 
 ### hide-security-settings / hide-network-settings / hide-server-settings / hide-proxy-settings / hide-websocket-settings / hide-remote-printer-settings
 

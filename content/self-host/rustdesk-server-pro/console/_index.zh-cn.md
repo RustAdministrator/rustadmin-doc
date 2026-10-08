@@ -120,7 +120,7 @@ RustDesk Server Pro Web 控制台是管理用户、设备、分组、授权、�
 ## API 令牌（Token）
 
 首先，请前往 **Settings → Tokens → Create** 创建一个具有所需权限的令牌，所需权限包括：  
-**Device, Audit Log, User, Group, Strategy, Address Book**。
+**Device, Audit Log, User, Group, Strategy, Address Book, Admin Role, Control Role**。
 
 创建完成后，可以通过 **命令行 (Command Line)** 或 **Python CLI** 使用这些令牌执行相应权限的操作。
 
@@ -231,47 +231,47 @@ Windows 命令行默认无输出，如需查看输出，可使用如下方式运
 
 ---
 
-#### 用户组管理 (`user_group.py`)
+#### 用户组管理 (`user-groups.py`)
 
 **查看帮助：**  
-`./user_group.py -h`
+`./user-groups.py -h`
 
 **查看用户组：**  
-`./user_group.py --url <url> --token <token> view [--name <group_name>]`
+`./user-groups.py --url <url> --token <token> view [--name <group_name>]`
 
 **示例：**  
-`./user_group.py --url https://example.com --token <token> view --name "销售团队"`
+`./user-groups.py --url https://example.com --token <token> view --name "销售团队"`
 
 **组操作：**
 
 - **创建用户组：**  
-  `./user_group.py --url <url> --token <token> add --name "组名" [--note "描述"] [--accessed-from '<json>'] [--access-to '<json>']`
+  `./user-groups.py --url <url> --token <token> add --name "组名" [--note "描述"] [--accessed-from '<json>'] [--access-to '<json>']`
   
   带访问控制的示例：  
-  `./user_group.py --url <url> --token <token> add --name "工程部" --accessed-from '[{"type":0,"name":"管理层"}]' --access-to '[{"type":1,"name":"开发服务器"}]'`
+  `./user-groups.py --url <url> --token <token> add --name "工程部" --accessed-from '[{"type":0,"name":"管理层"}]' --access-to '[{"type":1,"name":"开发服务器"}]'`
 
 - **更新用户组：**  
-  `./user_group.py --url <url> --token <token> update --name "组名" [--new-name "新名称"] [--note "新备注"] [--accessed-from '<json>'] [--access-to '<json>']`
+  `./user-groups.py --url <url> --token <token> update --name "组名" [--new-name "新名称"] [--note "新备注"] [--accessed-from '<json>'] [--access-to '<json>']`
 
 - **删除用户组：**  
-  `./user_group.py --url <url> --token <token> delete --name "组名"`
+  `./user-groups.py --url <url> --token <token> delete --name "组名"`
   
   支持逗号分隔的多个组名：`--name "组1,组2,组3"`
 
 **组内用户管理：**
 
 - **查看组内用户：**  
-  `./user_group.py --url <url> --token <token> view-users [--name <group_name>] [--user-name <username>]`
+  `./user-groups.py --url <url> --token <token> view-users [--name <group_name>] [--user-name <username>]`
   
   过滤条件：
   - `--name`：组名（精确匹配，可选）
   - `--user-name`：用户名（模糊搜索，可选）
   
   示例：  
-  `./user_group.py --url <url> --token <token> view-users --name Default --user-name john`
+  `./user-groups.py --url <url> --token <token> view-users --name Default --user-name john`
 
 - **添加用户到组：**  
-  `./user_group.py --url <url> --token <token> add-users --name "组名" --users "user1,user2,user3"`
+  `./user-groups.py --url <url> --token <token> add-users --name "组名" --users "user1,user2,user3"`
 
 **访问控制参数：**
 
@@ -291,37 +291,138 @@ Windows 命令行默认无输出，如需查看输出，可使用如下方式运
 
 ---
 
-#### 设备组管理 (`device_group.py`)
+#### 管理员角色管理 (`admin-roles.py`)
+
+令牌必须属于完整管理员，并具有 **Admin Role** 读取或读写权限。解析用户名或列出角色成员的命令还需要 **User** 读取权限。
+
+**查看角色：**
+
+```bash
+./admin-roles.py --url <url> --token <token> view [--name <角色名称>] [--type global|individual|group]
+./admin-roles.py --url <url> --token <token> view --guid <角色GUID>
+```
+
+**创建角色：**
+
+```bash
+./admin-roles.py --url <url> --token <token> add \
+  --name "Support Admin" --type global \
+  --permissions "users.view,devices.view,audits.view" --note "只读支持"
+
+./admin-roles.py --url <url> --token <token> add \
+  --name "Support Scope" --type group \
+  --permissions "users.view,devices.view,devices.enable_disable" \
+  --user-groups "Support" --device-groups "Servers" --unassigned
+```
+
+角色创建后不能更改类型。`--permissions` 接受逗号分隔的权限名称、十进制 ID 或以 `0x` 开头的 ID，也可以混用。例如，`users.view,513,0x0203` 等同于 `257,513,515`。服务器会拒绝不适用于所选角色类型的权限。
+
+`view` 会把已知权限 ID 转换回下表中的名称。脚本不认识的 ID 会保留为数字，以免隐藏较新服务器增加的权限。
+
+| 区域 | 权限 | 有效角色类型 |
+| --- | --- | --- |
+| 用户 | `users.view` (`257`); `users.create` (`259`); `users.invite` (`260`); `users.delete` (`261`); `users.enable_disable` (`262`); `users.edit_email` (`263`); `users.edit_password` (`264`); `users.edit_note` (`265`); `users.manage_2fa` (`266`); `users.force_logout` (`267`); `users.change_strategy` (`269`); `users.change_control_role` (`270`); `users.edit_display_name` (`271`) | `global`, `group` |
+| 用户 | `users.change_group` (`268`) | `global` |
+| 设备 | `devices.view` (`513`) | `global`, `group` |
+| 设备 | `devices.enable_disable` (`515`); `devices.delete` (`516`); `devices.edit_info` (`517`); `devices.change_strategy` (`520`) | `global`, `individual`, `group` |
+| 设备 | `devices.assign_to_user` (`518`); `devices.change_group` (`519`) | `global` |
+| 用户组 | `user_groups.view` (`769`); `user_groups.edit` (`770`) | `global` |
+| 设备组 | `device_groups.view` (`1025`); `device_groups.edit` (`1026`); `device_groups.change_strategy` (`1027`) | `global` |
+| 审计日志 | `audits.view` (`1281`); `audits.edit` (`1282`) | `global`, `individual` |
+| 策略 | `strategies.view` (`1537`); `strategies.edit` (`1538`) | `global` |
+| 自定义客户端 | `custom_clients.view` (`1793`); `custom_clients.edit` (`1794`) | `global` |
+| 控制角色 | `control_roles.view` (`2049`); `control_roles.edit` (`2050`) | `global` |
+
+**更新或删除角色：**
+
+```bash
+./admin-roles.py --url <url> --token <token> update --name "Support Admin" \
+  [--new-name "Helpdesk Admin"] [--note "新备注"] [--permissions "users.view,devices.view"] \
+  [--user-groups "Support"] [--device-groups "Servers"] [--unassigned|--no-unassigned]
+
+./admin-roles.py --url <url> --token <token> delete --name "Support Admin"
+```
+
+为 `--note`、`--permissions`、`--user-groups` 或 `--device-groups` 传入空值可清除该字段，例如 `--permissions ""`。
+
+**管理角色成员：**
+
+```bash
+./admin-roles.py --url <url> --token <token> view-users --name "Support Admin"
+./admin-roles.py --url <url> --token <token> add-users --name "Support Admin" --users "user1,user2"
+./admin-roles.py --url <url> --token <token> remove-users --name "Support Admin" --users "user1,user2"
+```
+
+角色目标和用户也可以使用 GUID。`--users` 中可以混用用户名和 GUID。
+
+---
+
+#### 控制角色管理 (`control-roles.py`)
+
+令牌需要 **Control Role** 读取或读写权限。解析用户名或列出角色成员的命令还需要 **User** 读取权限。
+
+**查看角色：**
+
+```bash
+./control-roles.py --url <url> --token <token> view [--name <角色名称>] [--status enabled|disabled]
+./control-roles.py --url <url> --token <token> view --guid <角色GUID>
+```
+
+**创建、更新、删除、启用或禁用角色：**
+
+```bash
+./control-roles.py --url <url> --token <token> add --name "Contractors" [--note "受限访问"]
+./control-roles.py --url <url> --token <token> update --name "Contractors" [--new-name "Vendors"] [--note "新备注"]
+./control-roles.py --url <url> --token <token> delete --name "Contractors"
+./control-roles.py --url <url> --token <token> enable --name "Contractors"
+./control-roles.py --url <url> --token <token> disable --name "Contractors"
+```
+
+此脚本创建的新角色不包含控制权限。请先在 Web 控制台中配置，再分配用户。此脚本不管理或显示控制权限定义。
+
+**管理角色成员：**
+
+```bash
+./control-roles.py --url <url> --token <token> view-users --name "Contractors"
+./control-roles.py --url <url> --token <token> assign-users --name "Contractors" --users "user1,user2"
+./control-roles.py --url <url> --token <token> remove-users --users "user1,user2"
+```
+
+角色目标和用户也可以使用 GUID。`remove-users` 会清除每个用户当前的控制角色，因此不接受 `--name` 或 `--guid`。对于保留的 `Default` 角色，`view-users` 只列出显式分配；未分配控制角色的用户也会继承 `Default`。`Not Logged` 角色不能分配给用户，保留角色不能重命名、添加备注或删除。
+
+---
+
+#### 设备组管理 (`device-groups.py`)
 
 **查看帮助：**  
-`./device_group.py -h`
+`./device-groups.py -h`
 
 **查看设备组：**  
-`./device_group.py --url <url> --token <token> view [--name <group_name>]`
+`./device-groups.py --url <url> --token <token> view [--name <group_name>]`
 
 **示例：**  
-`./device_group.py --url https://example.com --token <token> view`
+`./device-groups.py --url https://example.com --token <token> view`
 
 **组操作：**
 
 - **创建设备组：**  
-  `./device_group.py --url <url> --token <token> add --name "组名" [--note "描述"] [--accessed-from '<json>']`
+  `./device-groups.py --url <url> --token <token> add --name "组名" [--note "描述"] [--accessed-from '<json>']`
   
   示例：  
-  `./device_group.py --url <url> --token <token> add --name "生产环境" --accessed-from '[{"type":0,"name":"管理员"}]'`
+  `./device-groups.py --url <url> --token <token> add --name "生产环境" --accessed-from '[{"type":0,"name":"管理员"}]'`
 
 - **更新设备组：**  
-  `./device_group.py --url <url> --token <token> update --name "组名" [--new-name "新名称"] [--note "新备注"] [--accessed-from '<json>']`
+  `./device-groups.py --url <url> --token <token> update --name "组名" [--new-name "新名称"] [--note "新备注"] [--accessed-from '<json>']`
 
 - **删除设备组：**  
-  `./device_group.py --url <url> --token <token> delete --name "组名"`
+  `./device-groups.py --url <url> --token <token> delete --name "组名"`
   
   支持逗号分隔的多个组名：`--name "组1,组2,组3"`
 
 **组内设备管理：**
 
 - **查看组内设备：**  
-  `./device_group.py --url <url> --token <token> view-devices [过滤条件]`
+  `./device-groups.py --url <url> --token <token> view-devices [过滤条件]`
   
   可用的过滤条件：
   - `--name`：设备组名（精确匹配）
@@ -333,21 +434,21 @@ Windows 命令行默认无输出，如需查看输出，可使用如下方式运
   示例：  
   ```bash
   # 查看组内所有设备
-  ./device_group.py --url <url> --token <token> view-devices --name 生产环境
+  ./device-groups.py --url <url> --token <token> view-devices --name 生产环境
   
   # 按设备名搜索
-  ./device_group.py --url <url> --token <token> view-devices --device-name server
+  ./device-groups.py --url <url> --token <token> view-devices --device-name server
   
   # 组合过滤条件
-  ./device_group.py --url <url> --token <token> view-devices --name 生产环境 --user-name john
+  ./device-groups.py --url <url> --token <token> view-devices --name 生产环境 --user-name john
   ```
 
 
 - **添加设备到组：**  
-  `./device_group.py --url <url> --token <token> add-devices --name "组名" --ids "deviceid1,deviceid2"`
+  `./device-groups.py --url <url> --token <token> add-devices --name "组名" --ids "deviceid1,deviceid2"`
 
 - **从组中移除设备：**  
-  `./device_group.py --url <url> --token <token> remove-devices --name "组名" --ids "deviceid1,deviceid2"`
+  `./device-groups.py --url <url> --token <token> remove-devices --name "组名" --ids "deviceid1,deviceid2"`
 
 **访问控制参数：**
 

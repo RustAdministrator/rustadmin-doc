@@ -35,7 +35,44 @@ keywords: ["rustdesk relay server", "rustdesk hbbr", "rustdesk geolocation relay
 已知问题：https://github.com/rustdesk/rustdesk/discussions/7934
 {{% /notice %}}
 
-> 您需要私钥对`id_ed25519`和`id_ed25519.pub`。
+> 将`hbbr`的`KEY`环境变量设置为`id_ed25519.pub`中的公钥，或者将`id_ed25519`和`id_ed25519.pub`复制到中继服务器。
+
+### Docker Compose
+
+额外的中继服务器只需要运行`hbbr`，不需要`hbbs`和`depends_on`。请选择以下一种密钥配置方式：
+
+- 保留`environment`部分，并按以下示例将`KEY`设置为`id_ed25519.pub`的内容。
+- 删除整个`environment`部分，并将`id_ed25519`和`id_ed25519.pub`放入`./data`。
+
+创建一个包含以下内容的`compose.yml`文件。
+
+```yaml
+services:
+  hbbr:
+    container_name: hbbr
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    environment:
+      KEY: "<PUBLIC_KEY>"
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+```
+
+### Docker
+
+#### 使用环境变量设置密钥
+
+将`KEY`设置为`id_ed25519.pub`的内容。
+
+```bash
+# sudo docker run --name hbbr -e KEY="<PUBLIC_KEY>" -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+#### 使用密钥文件
+
+下面的Docker示例使用密钥文件方式。
 
 # 安装步骤
 
@@ -56,8 +93,18 @@ keywords: ["rustdesk relay server", "rustdesk hbbr", "rustdesk geolocation relay
 
 3. 使用先前创建的卷部署hbbr容器。该卷包含运行私有中继服务器所需的私钥对。
 ```
+# sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+`rustdesk/rustdesk-server`镜像仍支持`-k <KEY>`。要使用挂载的密钥文件，请通过`-k _`运行：
+
+```bash
 # sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server hbbr -k _
 ```
+
+这里的`_`是一个特殊值，并不是密钥本身。它会让`hbbr`加载或生成`id_ed25519`，从中获取公钥，并使用该公钥验证中继请求。RustDesk Server Pro 1.8.6之前的版本也支持通过`-k _`加载`id_ed25519`。
+
+从RustDesk Server Pro 1.8.6开始，`hbbr`的`-k`选项已弃用且会被忽略。如果未设置`KEY`，`hbbr`会从`id_ed25519`中获取公钥；如果私钥文件不存在，则从`id_ed25519.pub`中读取。如果两个文件都不存在，`hbbr`将以公开中继模式运行。
 
 4. 检查运行日志以验证hbbr正在使用您的密钥对运行：
 ```

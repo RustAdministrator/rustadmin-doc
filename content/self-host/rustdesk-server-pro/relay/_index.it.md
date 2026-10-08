@@ -35,7 +35,44 @@ Puoi avere diversi server di relay in esecuzione in tutto il mondo e sfruttare l
 Problema noto: https://github.com/rustdesk/rustdesk/discussions/7934
 {{% /notice %}}
 
-> Avrai bisogno della coppia di chiavi private `id_ed25519` e `id_ed25519.pub`.
+> Imposta la variabile d'ambiente `KEY` di `hbbr` sulla chiave pubblica contenuta in `id_ed25519.pub`, oppure copia `id_ed25519` e `id_ed25519.pub` sul server relay.
+
+### Docker Compose
+
+Un server relay aggiuntivo richiede solo `hbbr`; `hbbs` e `depends_on` non sono necessari. Scegli uno dei seguenti metodi di configurazione della chiave:
+
+- Mantieni la sezione `environment` e imposta `KEY` sul contenuto di `id_ed25519.pub`, come mostrato di seguito.
+- Rimuovi l’intera sezione `environment` e inserisci `id_ed25519` e `id_ed25519.pub` in `./data`.
+
+Crea un file `compose.yml` con il seguente contenuto.
+
+```yaml
+services:
+  hbbr:
+    container_name: hbbr
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    environment:
+      KEY: "<PUBLIC_KEY>"
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+```
+
+### Docker
+
+#### Impostare la chiave con una variabile d'ambiente
+
+Imposta `KEY` sul contenuto di `id_ed25519.pub`.
+
+```bash
+# sudo docker run --name hbbr -e KEY="<PUBLIC_KEY>" -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+#### Usare i file delle chiavi
+
+L'esempio Docker seguente utilizza il metodo dei file delle chiavi.
 
 1 - Se docker è già installato, connettiti al tuo server via SSH e crea un volume per hbbr.
 
@@ -57,8 +94,18 @@ La sintassi del comando è `scp <percorso/nome_file> username@server:</percorso/
 3 - Distribuisci il container hbbr usando il volume creato precedentemente. Questo volume ha la coppia di chiavi private necessaria per eseguire il tuo server di relay privato.
 
 ```
+# sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+L'immagine `rustdesk/rustdesk-server` accetta ancora `-k <KEY>`. Per utilizzare il file della chiave montato, eseguila con `-k _`:
+
+```bash
 # sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server hbbr -k _
 ```
+
+In questo caso, `_` è un valore speciale e non la chiave stessa. Indica a `hbbr` di caricare o generare `id_ed25519`, ricavarne la chiave pubblica e utilizzare tale chiave per convalidare le richieste di relay. Anche le versioni di RustDesk Server Pro precedenti alla 1.8.6 accettavano `-k _` per caricare `id_ed25519`.
+
+A partire da RustDesk Server Pro 1.8.6, l'opzione `-k` di `hbbr` è deprecata e viene ignorata. Se `KEY` non è impostata, `hbbr` ricava la chiave pubblica da `id_ed25519` oppure la legge da `id_ed25519.pub` se il file della chiave privata non esiste. Se nessuno dei due file esiste, `hbbr` viene eseguito in modalità relay pubblica.
 
 4 - Controlla i log di esecuzione per verificare che hbbr sia in esecuzione usando la tua coppia di chiavi.
 

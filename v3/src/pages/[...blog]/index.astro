@@ -8,10 +8,11 @@ import SinglePost from '~/components/blog/SinglePost.astro';
 import ToBlogLink from '~/components/blog/ToBlogLink.astro';
 
 import { getCanonical, getPermalink } from '~/utils/permalinks';
-import { getStaticPathsBlogPost, blogPostRobots } from '~/utils/blog';
+import { getPostAlternates, getStaticPathsBlogPost, blogPostRobots } from '~/utils/blog';
 import { findImage } from '~/utils/images';
 import type { MetaData } from '~/types';
 import RelatedPosts from '~/components/blog/RelatedPosts.astro';
+import BlogFaq from '~/components/blog/BlogFaq.astro';
 
 export const prerender = true;
 
@@ -22,6 +23,7 @@ export const getStaticPaths = (async () => {
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { post } = Astro.props as Props;
+const localePaths = await getPostAlternates(post);
 
 const url = getCanonical(getPermalink(post.permalink, 'post'));
 const image = (await findImage(post.image)) as ImageMetadata | string | undefined;
@@ -59,10 +61,20 @@ const articleData = {
 };
 ---
 
-<Layout metadata={metadata} structuredDataType="article" articleData={articleData}>
+<Layout
+  metadata={metadata}
+  i18n
+  lang={post.lang}
+  localePaths={localePaths}
+  alternateLinks={localePaths}
+  structuredDataType="article"
+  articleData={articleData}
+  faqItems={post.faq}
+>
   <SinglePost post={{ ...post, image: image }} url={url}>
     {post.Content ? <post.Content /> : <Fragment set:html={post.content || ''} />}
+    <BlogFaq items={post.faq} />
   </SinglePost>
-  <ToBlogLink />
+  <ToBlogLink lang={post.lang} />
   <RelatedPosts post={post} />
 </Layout>

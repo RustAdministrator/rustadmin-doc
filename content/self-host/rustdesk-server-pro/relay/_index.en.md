@@ -14,7 +14,7 @@ You need additional relay servers when users connect across regions and direct h
 ## Relay setup checklist
 
 1. Deploy an extra `hbbr` relay server in the target region.
-2. Copy the `id_ed25519` and `id_ed25519.pub` key pair to that relay server.
+2. Set the `KEY` environment variable on `hbbr` to the public key in `id_ed25519.pub`, or copy `id_ed25519` and `id_ed25519.pub` to the relay server.
 3. Open TCP ports `21117` and `21119`.
 4. Add the new relay hostnames or IP addresses in the RustDesk Pro web console.
 5. Install the MaxMind GeoLite2 City database on `hbbs`.
@@ -36,7 +36,44 @@ You can have several relay servers running across the globe and leverage GeoLoca
 Known issue: https://github.com/rustdesk/rustdesk/discussions/7934
 {{% /notice %}}
 
-> You will need the private key pair `id_ed25519` and `id_ed25519.pub`.
+> Set the `KEY` environment variable on `hbbr` to the public key in `id_ed25519.pub`, or copy `id_ed25519` and `id_ed25519.pub` to the relay server.
+
+### Docker Compose
+
+An additional relay server only needs `hbbr`; `hbbs` and `depends_on` are not required. Choose one of the following key configuration methods:
+
+- Keep the `environment` section and set `KEY` to the contents of `id_ed25519.pub`, as shown below.
+- Remove the entire `environment` section and put `id_ed25519` and `id_ed25519.pub` in `./data`.
+
+Create a `compose.yml` file with the following content.
+
+```yaml
+services:
+  hbbr:
+    container_name: hbbr
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    environment:
+      KEY: "<PUBLIC_KEY>"
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+```
+
+### Docker
+
+#### Set the key with an environment variable
+
+Set `KEY` to the contents of `id_ed25519.pub`.
+
+```bash
+# sudo docker run --name hbbr -e KEY="<PUBLIC_KEY>" -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+#### Use key files
+
+The Docker example below uses the key-file method.
 
 1 - If docker is already installed, connect to your server via SSH and create a volume for hbbr.
 
@@ -58,8 +95,18 @@ The command syntax is `scp <path/filename> username@server:</destination/path>`.
 3 - Deploy the hbbr container using the volume previously created. This volume has the private key pair needed to run your private relay server.
 
 ```
+# sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+The `rustdesk/rustdesk-server` image still accepts `-k <KEY>`. To use the mounted key file, run it with `-k _`:
+
+```bash
 # sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server hbbr -k _
 ```
+
+Here, `_` is a special value rather than the key itself. It tells `hbbr` to load or generate `id_ed25519`, derive its public key, and use that key to validate relay requests. RustDesk Server Pro versions earlier than 1.8.6 also accepted `-k _` to load `id_ed25519`.
+
+Starting with RustDesk Server Pro 1.8.6, the `-k` option for `hbbr` is deprecated and ignored. If `KEY` is not set, `hbbr` derives the public key from `id_ed25519`, or reads it from `id_ed25519.pub` if the private key file does not exist. If neither file exists, `hbbr` runs in public relay mode.
 
 4 - Check the running logs to verify that hbbr is running using your key pair.
 

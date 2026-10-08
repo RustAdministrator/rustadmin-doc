@@ -8,6 +8,10 @@ keywords: ["rustdesk client deployment", "rustdesk powershell deploy", "rustdesk
 
 This guide covers large-scale RustDesk client deployment with scripts and automation tools such as PowerShell, batch, and macOS bash. If you need the simplest experience and have RustDesk Server Pro, start with the custom client generator: https://twitter.com/rustdesk/status/1788905463678951787.
 
+{{% notice note %}}
+Related reading: [setting up unattended access](https://rustdesk.com/blog/rustdesk-unattended-access-setup).
+{{% /notice %}}
+
 ## What is the best way to deploy RustDesk clients at scale?
 
 For RustDesk Server Pro, the easiest large-scale deployment path is usually the custom client generator because it packages your server settings into the client build. For environments managed through RMM, Intune, GPO, or custom automation, PowerShell, batch, and shell scripts are more flexible.
@@ -354,10 +358,10 @@ fi
 echo "Installing RustDesk"
 if [ "${ID}" = "debian" ] || [ "$OS" = "Ubuntu" ] || [ "$OS" = "Debian" ] || [ "${UPSTREAM_ID}" = "ubuntu" ] || [ "${UPSTREAM_ID}" = "debian" ]; then
     wget https://github.com/rustdesk/rustdesk/releases/download/1.2.6/rustdesk-1.2.6-x86_64.deb
-    apt-get install -fy ./rustdesk-1.2.6-x86_64.deb > null
+    apt-get install -fy ./rustdesk-1.2.6-x86_64.deb > /dev/null
 elif [ "$OS" = "CentOS" ] || [ "$OS" = "RedHat" ] || [ "$OS" = "Fedora Linux" ] || [ "${UPSTREAM_ID}" = "rhel" ] || [ "$OS" = "Almalinux" ] || [ "$OS" = "Rocky*" ] ; then
     wget https://github.com/rustdesk/rustdesk/releases/download/1.2.6/rustdesk-1.2.6-0.x86_64.rpm
-    yum localinstall ./rustdesk-1.2.6-0.x86_64.rpm -y > null
+    yum localinstall ./rustdesk-1.2.6-0.x86_64.rpm -y > /dev/null
 else
     echo "Unsupported OS"
     # here you could ask the user for permission to try and install anyway

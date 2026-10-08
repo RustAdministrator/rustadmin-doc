@@ -35,7 +35,44 @@ keywords: ["rustdesk relay server", "rustdesk hbbr", "rustdesk geolocation relay
 既知の問題: https://github.com/rustdesk/rustdesk/discussions/7934
 {{% /notice %}}
 
-> 秘密鍵ペア`id_ed25519`と`id_ed25519.pub`が必要です。
+> `hbbr`の環境変数`KEY`に`id_ed25519.pub`の公開鍵を設定するか、`id_ed25519`と`id_ed25519.pub`をリレーサーバーにコピーします。
+
+### Docker Compose
+
+追加のリレーサーバーに必要なのは`hbbr`だけです。`hbbs`と`depends_on`は必要ありません。次のいずれかの鍵設定方法を選択します。
+
+- `environment`セクションを残し、次の例のように`KEY`に`id_ed25519.pub`の内容を設定します。
+- `environment`セクション全体を削除し、`id_ed25519`と`id_ed25519.pub`を`./data`に配置します。
+
+次の内容で`compose.yml`ファイルを作成します。
+
+```yaml
+services:
+  hbbr:
+    container_name: hbbr
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    environment:
+      KEY: "<PUBLIC_KEY>"
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+```
+
+### Docker
+
+#### 環境変数で鍵を設定する
+
+`KEY`に`id_ed25519.pub`の内容を設定します。
+
+```bash
+# sudo docker run --name hbbr -e KEY="<PUBLIC_KEY>" -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+#### 鍵ファイルを使用する
+
+以下のDockerの例では、鍵ファイルを使用する方法を示します。
 
 1 - dockerがすでにインストールされている場合、SSH経由でサーバーに接続し、hbbr用のボリュームを作成します。
 
@@ -57,8 +94,18 @@ hbbrボリュームは`/var/lib/docker/volumes/hbbr/_data`に配置される必�
 3 - 以前に作成したボリュームを使用してhbbrコンテナをデプロイします。このボリュームには、プライベートリレーサーバーを実行するために必要な秘密鍵ペアが含まれています。
 
 ```
+# sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+`rustdesk/rustdesk-server`イメージでは、引き続き`-k <KEY>`を使用できます。マウントした鍵ファイルを使用するには、`-k _`を指定して実行します。
+
+```bash
 # sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server hbbr -k _
 ```
+
+ここで`_`は鍵そのものではなく、特別な値です。`hbbr`に`id_ed25519`を読み込むか生成させ、そこから公開鍵を取得してリレー要求の検証に使用させます。RustDesk Server Pro 1.8.6より前のバージョンでも、`id_ed25519`を読み込むために`-k _`を使用できました。
+
+RustDesk Server Pro 1.8.6以降、`hbbr`の`-k`オプションは非推奨となり、無視されます。`KEY`が設定されていない場合、`hbbr`は`id_ed25519`から公開鍵を取得し、秘密鍵ファイルが存在しない場合は`id_ed25519.pub`から読み取ります。どちらのファイルも存在しない場合、`hbbr`は公開リレーモードで動作します。
 
 4 - 実行ログを確認して、hbbrが鍵ペアを使用して実行されていることを確認します。
 

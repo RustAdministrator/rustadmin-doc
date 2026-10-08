@@ -117,7 +117,7 @@ Para asignar una estrategia a un dispositivo, pase el cursor sobre el lado derec
 
 ## Token de API
 
-Primero debe ir a **Configuración → Tokens → Crear** y crear un token con los permisos requeridos: **Dispositivo, Registro de Auditoría, Usuario, Grupo, Estrategia, Libreta de Direcciones**.
+Primero debe ir a **Configuración → Tokens → Crear** y crear un token con los permisos requeridos: **Dispositivo, Registro de Auditoría, Usuario, Grupo, Estrategia, Libreta de Direcciones, Rol de Administrador, Rol de Control**.
 
 Una vez creado, puede usar estos tokens a través de **línea de comandos** o **Python CLI** para realizar acciones con los permisos correspondientes.
 
@@ -223,47 +223,47 @@ ver [aquí](https://github.com/rustdesk/rustdesk/discussions/6377#discussioncomm
 
 ---
 
-#### Gestión de Grupos de Usuarios (`user_group.py`)
+#### Gestión de Grupos de Usuarios (`user-groups.py`)
 
 **Mostrar ayuda:**  
-`./user_group.py -h`
+`./user-groups.py -h`
 
 **Ver grupos de usuarios:**  
-`./user_group.py --url <url> --token <token> view [--name <group_name>]`
+`./user-groups.py --url <url> --token <token> view [--name <group_name>]`
 
 **Ejemplo:**  
-`./user_group.py --url https://example.com --token <token> view --name "Equipo Ventas"`
+`./user-groups.py --url https://example.com --token <token> view --name "Equipo Ventas"`
 
 **Operaciones de grupo:**
 
 - **Crear grupo de usuarios:**  
-  `./user_group.py --url <url> --token <token> add --name "NombreGrupo" [--note "descripción"] [--accessed-from '<json>'] [--access-to '<json>']`
+  `./user-groups.py --url <url> --token <token> add --name "NombreGrupo" [--note "descripción"] [--accessed-from '<json>'] [--access-to '<json>']`
   
   Ejemplo con control de acceso:  
-  `./user_group.py --url <url> --token <token> add --name "Ingeniería" --accessed-from '[{"type":0,"name":"Gerentes"}]' --access-to '[{"type":1,"name":"Servidores Dev"}]'`
+  `./user-groups.py --url <url> --token <token> add --name "Ingeniería" --accessed-from '[{"type":0,"name":"Gerentes"}]' --access-to '[{"type":1,"name":"Servidores Dev"}]'`
 
 - **Actualizar grupo de usuarios:**  
-  `./user_group.py --url <url> --token <token> update --name "NombreGrupo" [--new-name "Nuevo Nombre"] [--note "nueva nota"] [--accessed-from '<json>'] [--access-to '<json>']`
+  `./user-groups.py --url <url> --token <token> update --name "NombreGrupo" [--new-name "Nuevo Nombre"] [--note "nueva nota"] [--accessed-from '<json>'] [--access-to '<json>']`
 
 - **Eliminar grupo de usuarios:**  
-  `./user_group.py --url <url> --token <token> delete --name "NombreGrupo"`
+  `./user-groups.py --url <url> --token <token> delete --name "NombreGrupo"`
   
   Admite nombres separados por comas: `--name "Grupo1,Grupo2,Grupo3"`
 
 **Gestión de usuarios en grupos:**
 
 - **Ver usuarios en grupo:**  
-  `./user_group.py --url <url> --token <token> view-users [--name <group_name>] [--user-name <username>]`
+  `./user-groups.py --url <url> --token <token> view-users [--name <group_name>] [--user-name <username>]`
   
   Filtros:
   - `--name`: nombre del grupo (coincidencia exacta, opcional)
   - `--user-name`: nombre de usuario (búsqueda difusa, opcional)
   
   Ejemplo:  
-  `./user_group.py --url <url> --token <token> view-users --name Default --user-name john`
+  `./user-groups.py --url <url> --token <token> view-users --name Default --user-name john`
 
 - **Agregar usuarios al grupo:**  
-  `./user_group.py --url <url> --token <token> add-users --name "NombreGrupo" --users "user1,user2,user3"`
+  `./user-groups.py --url <url> --token <token> add-users --name "NombreGrupo" --users "user1,user2,user3"`
 
 **Parámetros de control de acceso:**
 
@@ -283,37 +283,138 @@ ver [aquí](https://github.com/rustdesk/rustdesk/discussions/6377#discussioncomm
 
 ---
 
-#### Gestión de Grupos de Dispositivos (`device_group.py`)
+#### Gestión de roles de administrador (`admin-roles.py`)
+
+El token debe pertenecer a un administrador completo y tener permiso de lectura o de lectura y escritura para **Admin Role**. Los comandos que resuelven nombres de usuario o enumeran miembros del rol también requieren permiso de lectura para **User**.
+
+**Ver roles:**
+
+```bash
+./admin-roles.py --url <url> --token <token> view [--name <nombre_rol>] [--type global|individual|group]
+./admin-roles.py --url <url> --token <token> view --guid <guid_rol>
+```
+
+**Crear un rol:**
+
+```bash
+./admin-roles.py --url <url> --token <token> add \
+  --name "Support Admin" --type global \
+  --permissions "users.view,devices.view,audits.view" --note "Soporte de solo lectura"
+
+./admin-roles.py --url <url> --token <token> add \
+  --name "Support Scope" --type group \
+  --permissions "users.view,devices.view,devices.enable_disable" \
+  --user-groups "Support" --device-groups "Servers" --unassigned
+```
+
+El tipo de rol no puede cambiarse después de crearlo. `--permissions` acepta nombres de permisos separados por comas, IDs decimales o IDs con prefijo `0x`, y permite mezclar los formatos. Por ejemplo, `users.view,513,0x0203` equivale a `257,513,515`. El servidor rechaza los permisos que no sean válidos para el tipo de rol seleccionado.
+
+El comando `view` convierte los IDs de permisos conocidos en los nombres de la tabla siguiente. Un ID desconocido para el script se conserva como número para no ocultar permisos añadidos por una versión más reciente del servidor.
+
+| Área | Permisos | Tipos de rol válidos |
+| --- | --- | --- |
+| Usuarios | `users.view` (`257`); `users.create` (`259`); `users.invite` (`260`); `users.delete` (`261`); `users.enable_disable` (`262`); `users.edit_email` (`263`); `users.edit_password` (`264`); `users.edit_note` (`265`); `users.manage_2fa` (`266`); `users.force_logout` (`267`); `users.change_strategy` (`269`); `users.change_control_role` (`270`); `users.edit_display_name` (`271`) | `global`, `group` |
+| Usuarios | `users.change_group` (`268`) | `global` |
+| Dispositivos | `devices.view` (`513`) | `global`, `group` |
+| Dispositivos | `devices.enable_disable` (`515`); `devices.delete` (`516`); `devices.edit_info` (`517`); `devices.change_strategy` (`520`) | `global`, `individual`, `group` |
+| Dispositivos | `devices.assign_to_user` (`518`); `devices.change_group` (`519`) | `global` |
+| Grupos de usuarios | `user_groups.view` (`769`); `user_groups.edit` (`770`) | `global` |
+| Grupos de dispositivos | `device_groups.view` (`1025`); `device_groups.edit` (`1026`); `device_groups.change_strategy` (`1027`) | `global` |
+| Registros de auditoría | `audits.view` (`1281`); `audits.edit` (`1282`) | `global`, `individual` |
+| Estrategias | `strategies.view` (`1537`); `strategies.edit` (`1538`) | `global` |
+| Clientes personalizados | `custom_clients.view` (`1793`); `custom_clients.edit` (`1794`) | `global` |
+| Roles de control | `control_roles.view` (`2049`); `control_roles.edit` (`2050`) | `global` |
+
+**Actualizar o eliminar un rol:**
+
+```bash
+./admin-roles.py --url <url> --token <token> update --name "Support Admin" \
+  [--new-name "Helpdesk Admin"] [--note "nueva nota"] [--permissions "users.view,devices.view"] \
+  [--user-groups "Support"] [--device-groups "Servers"] [--unassigned|--no-unassigned]
+
+./admin-roles.py --url <url> --token <token> delete --name "Support Admin"
+```
+
+Pase un valor vacío a `--note`, `--permissions`, `--user-groups` o `--device-groups` para borrar el campo, por ejemplo `--permissions ""`.
+
+**Gestionar miembros del rol:**
+
+```bash
+./admin-roles.py --url <url> --token <token> view-users --name "Support Admin"
+./admin-roles.py --url <url> --token <token> add-users --name "Support Admin" --users "user1,user2"
+./admin-roles.py --url <url> --token <token> remove-users --name "Support Admin" --users "user1,user2"
+```
+
+Los roles y usuarios también pueden indicarse mediante GUID. En `--users` pueden mezclarse nombres de usuario y GUID.
+
+---
+
+#### Gestión de roles de control (`control-roles.py`)
+
+El token necesita permiso de lectura o de lectura y escritura para **Control Role**. Los comandos que resuelven nombres de usuario o enumeran miembros del rol también requieren permiso de lectura para **User**.
+
+**Ver roles:**
+
+```bash
+./control-roles.py --url <url> --token <token> view [--name <nombre_rol>] [--status enabled|disabled]
+./control-roles.py --url <url> --token <token> view --guid <guid_rol>
+```
+
+**Crear, actualizar, eliminar, habilitar o deshabilitar un rol:**
+
+```bash
+./control-roles.py --url <url> --token <token> add --name "Contractors" [--note "Acceso restringido"]
+./control-roles.py --url <url> --token <token> update --name "Contractors" [--new-name "Vendors"] [--note "nueva nota"]
+./control-roles.py --url <url> --token <token> delete --name "Contractors"
+./control-roles.py --url <url> --token <token> enable --name "Contractors"
+./control-roles.py --url <url> --token <token> disable --name "Contractors"
+```
+
+Los roles creados con este script no incluyen permisos de control. Configúrelos en la consola web antes de asignar usuarios. Este script no administra ni muestra las definiciones de permisos de control.
+
+**Gestionar miembros del rol:**
+
+```bash
+./control-roles.py --url <url> --token <token> view-users --name "Contractors"
+./control-roles.py --url <url> --token <token> assign-users --name "Contractors" --users "user1,user2"
+./control-roles.py --url <url> --token <token> remove-users --users "user1,user2"
+```
+
+Los roles y usuarios también pueden indicarse mediante GUID. `remove-users` borra el rol de control actual de cada usuario, por lo que no acepta `--name` ni `--guid`. Para el rol reservado `Default`, `view-users` solo muestra asignaciones explícitas; los usuarios sin rol de control asignado también heredan `Default`. El rol `Not Logged` no puede asignarse a usuarios, y los roles reservados no pueden renombrarse, recibir una nota ni eliminarse.
+
+---
+
+#### Gestión de Grupos de Dispositivos (`device-groups.py`)
 
 **Mostrar ayuda:**  
-`./device_group.py -h`
+`./device-groups.py -h`
 
 **Ver grupos de dispositivos:**  
-`./device_group.py --url <url> --token <token> view [--name <group_name>]`
+`./device-groups.py --url <url> --token <token> view [--name <group_name>]`
 
 **Ejemplo:**  
-`./device_group.py --url https://example.com --token <token> view`
+`./device-groups.py --url https://example.com --token <token> view`
 
 **Operaciones de grupo:**
 
 - **Crear grupo de dispositivos:**  
-  `./device_group.py --url <url> --token <token> add --name "NombreGrupo" [--note "descripción"] [--accessed-from '<json>']`
+  `./device-groups.py --url <url> --token <token> add --name "NombreGrupo" [--note "descripción"] [--accessed-from '<json>']`
   
   Ejemplo:  
-  `./device_group.py --url <url> --token <token> add --name "Producción" --accessed-from '[{"type":0,"name":"Admins"}]'`
+  `./device-groups.py --url <url> --token <token> add --name "Producción" --accessed-from '[{"type":0,"name":"Admins"}]'`
 
 - **Actualizar grupo de dispositivos:**  
-  `./device_group.py --url <url> --token <token> update --name "NombreGrupo" [--new-name "Nuevo Nombre"] [--note "nueva nota"] [--accessed-from '<json>']`
+  `./device-groups.py --url <url> --token <token> update --name "NombreGrupo" [--new-name "Nuevo Nombre"] [--note "nueva nota"] [--accessed-from '<json>']`
 
 - **Eliminar grupo de dispositivos:**  
-  `./device_group.py --url <url> --token <token> delete --name "NombreGrupo"`
+  `./device-groups.py --url <url> --token <token> delete --name "NombreGrupo"`
   
   Admite nombres separados por comas: `--name "Grupo1,Grupo2,Grupo3"`
 
 **Gestión de dispositivos en grupos:**
 
 - **Ver dispositivos en grupo:**  
-  `./device_group.py --url <url> --token <token> view-devices [filtros]`
+  `./device-groups.py --url <url> --token <token> view-devices [filtros]`
   
   Filtros disponibles:
   - `--name`: nombre del grupo de dispositivos (coincidencia exacta)
@@ -325,21 +426,21 @@ ver [aquí](https://github.com/rustdesk/rustdesk/discussions/6377#discussioncomm
   Ejemplos:  
   ```bash
   # Ver todos los dispositivos en un grupo
-  ./device_group.py --url <url> --token <token> view-devices --name Producción
+  ./device-groups.py --url <url> --token <token> view-devices --name Producción
   
   # Buscar por nombre de dispositivo
-  ./device_group.py --url <url> --token <token> view-devices --device-name server
+  ./device-groups.py --url <url> --token <token> view-devices --device-name server
   
   # Combinar filtros
-  ./device_group.py --url <url> --token <token> view-devices --name Producción --user-name john
+  ./device-groups.py --url <url> --token <token> view-devices --name Producción --user-name john
   ```
 
 
 - **Agregar dispositivos al grupo:**  
-  `./device_group.py --url <url> --token <token> add-devices --name "NombreGrupo" --ids "deviceid1,deviceid2"`
+  `./device-groups.py --url <url> --token <token> add-devices --name "NombreGrupo" --ids "deviceid1,deviceid2"`
 
 - **Quitar dispositivos del grupo:**  
-  `./device_group.py --url <url> --token <token> remove-devices --name "NombreGrupo" --ids "deviceid1,deviceid2"`
+  `./device-groups.py --url <url> --token <token> remove-devices --name "NombreGrupo" --ids "deviceid1,deviceid2"`
 
 **Parámetro de control de acceso:**
 

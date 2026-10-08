@@ -125,13 +125,18 @@ export const headerData = (locale?: Lang) => {
       {
         text: t({
           en: 'Blog',
+          de: 'Blog',
+          es: 'Blog',
+          fr: 'Blog',
+          it: 'Blog',
           ja: 'ブログ',
+          pt: 'Blog',
           'zh-cn': '博客',
-          'zh-tw': '博客',
+          'zh-tw': '部落格',
           ar: 'مدونة',
           ko: '블로그',
         }),
-        href: getPermalink('/blog'),
+        href: getPermalink(getLocalPath(locale || '', '/blog')),
       },
     ],
     actions: [{
@@ -249,6 +254,22 @@ export const footerData = (locale?: Lang) => {
           ko: '개인정보 처리방침',
         })
         , href: getPermalink('/privacy')
+      },
+      {
+        text: t({
+          en: 'Cookie settings',
+          de: 'Cookie-Einstellungen',
+          es: 'Configuración de cookies',
+          fr: 'Paramètres des cookies',
+          it: 'Impostazioni cookie',
+          ja: 'Cookie設定',
+          pt: 'Configurações de cookies',
+          'zh-cn': 'Cookie 设置',
+          'zh-tw': 'Cookie 設定',
+          ar: 'إعدادات ملفات تعريف الارتباط',
+          ko: '쿠키 설정',
+        })
+        , href: '#cookie-settings'
       },
     ],
     socialLinks: [

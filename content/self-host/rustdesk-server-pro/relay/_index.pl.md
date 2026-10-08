@@ -39,7 +39,44 @@ Możesz uruchomić wiele serwerów relay na całym świecie i wykorzystywać aut
 Znany problem: https://github.com/rustdesk/rustdesk/discussions/7934
 {{% /notice %}}
 
-> Będziesz potrzebować pary kluczy prywatnych `id_ed25519` i `id_ed25519.pub`.
+> Ustaw zmienną środowiskową `KEY` procesu `hbbr` na klucz publiczny z pliku `id_ed25519.pub` albo skopiuj pliki `id_ed25519` i `id_ed25519.pub` na serwer relay.
+
+### Docker Compose
+
+Dodatkowy serwer relay wymaga tylko procesu `hbbr`; `hbbs` i `depends_on` nie są potrzebne. Wybierz jedną z poniższych metod konfiguracji klucza:
+
+- Zachowaj sekcję `environment` i ustaw `KEY` na zawartość pliku `id_ed25519.pub`, jak pokazano poniżej.
+- Usuń całą sekcję `environment` i umieść pliki `id_ed25519` oraz `id_ed25519.pub` w katalogu `./data`.
+
+Utwórz plik `compose.yml` z następującą zawartością.
+
+```yaml
+services:
+  hbbr:
+    container_name: hbbr
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    environment:
+      KEY: "<PUBLIC_KEY>"
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+```
+
+### Docker
+
+#### Ustawianie klucza za pomocą zmiennej środowiskowej
+
+Ustaw `KEY` na zawartość pliku `id_ed25519.pub`.
+
+```bash
+# sudo docker run --name hbbr -e KEY="<PUBLIC_KEY>" -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+#### Używanie plików kluczy
+
+Poniższy przykład Dockera korzysta z metody z plikami kluczy.
 
 1 - Jeśli docker jest już zainstalowany, połącz się z serwerem przez SSH i utwórz wolumin dla hbbr.
 
@@ -61,8 +98,18 @@ Polecenie to `scp <ścieżka/nazwa pliku> nazwa użytkownika@serwer:</ścieżka 
 3 - Wdróż kontener hbbr przy użyciu utworzonego wcześniej woluminu. Wolumin ten zawiera parę kluczy prywatnych niezbędnych do uruchomienia prywatnego serwera przekaźnikowego.
 
 ```
+# sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+Obraz `rustdesk/rustdesk-server` nadal akceptuje `-k <KEY>`. Aby użyć zamontowanego pliku klucza, uruchom go z opcją `-k _`:
+
+```bash
 # sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server hbbr -k _
 ```
+
+W tym przypadku `_` jest wartością specjalną, a nie samym kluczem. Nakazuje ona procesowi `hbbr` wczytać lub wygenerować `id_ed25519`, wyprowadzić z niego klucz publiczny i użyć tego klucza do sprawdzania żądań relay. Wersje RustDesk Server Pro starsze niż 1.8.6 również akceptowały `-k _` w celu wczytania `id_ed25519`.
+
+Od wersji RustDesk Server Pro 1.8.6 opcja `-k` programu `hbbr` jest przestarzała i ignorowana. Jeśli zmienna `KEY` nie jest ustawiona, `hbbr` pobiera klucz publiczny z pliku `id_ed25519` lub odczytuje go z pliku `id_ed25519.pub`, gdy plik klucza prywatnego nie istnieje. Jeśli nie istnieje żaden z tych plików, `hbbr` działa w trybie publicznego serwera relay.
 
 4 - Sprawdź logi działania, aby upewnić się, że hbbr działa przy użyciu twojej pary kluczy.
 

@@ -31,7 +31,44 @@ Wenn Sie einen zusätzlichen Relay-Server explizit auf einem anderen Rechner ein
 
 Sie können mehrere Relay-Server auf der ganzen Welt betreiben und GeoLocation nutzen, um den nächstgelegenen Relay-Server zu verwenden, sodass Sie eine schnellere Verbindung zu entfernten Computern herstellen können.
 
-> Sie benötigen das private Schlüsselpaar `id_ed25519` und `id_ed25519.pub`.
+> Setzen Sie die Umgebungsvariable `KEY` von `hbbr` auf den öffentlichen Schlüssel in `id_ed25519.pub`, oder kopieren Sie `id_ed25519` und `id_ed25519.pub` auf den Relay-Server.
+
+### Docker Compose
+
+Ein zusätzlicher Relay-Server benötigt nur `hbbr`; `hbbs` und `depends_on` sind nicht erforderlich. Wählen Sie eine der folgenden Methoden zur Schlüsselkonfiguration:
+
+- Behalten Sie den Abschnitt `environment` bei und setzen Sie `KEY` wie unten gezeigt auf den Inhalt von `id_ed25519.pub`.
+- Entfernen Sie den gesamten Abschnitt `environment` und legen Sie `id_ed25519` sowie `id_ed25519.pub` in `./data` ab.
+
+Erstellen Sie eine Datei namens `compose.yml` mit dem folgenden Inhalt.
+
+```yaml
+services:
+  hbbr:
+    container_name: hbbr
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    environment:
+      KEY: "<PUBLIC_KEY>"
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+```
+
+### Docker
+
+#### Schlüssel mit einer Umgebungsvariable festlegen
+
+Setzen Sie `KEY` auf den Inhalt von `id_ed25519.pub`.
+
+```bash
+# sudo docker run --name hbbr -e KEY="<PUBLIC_KEY>" -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+#### Schlüsseldateien verwenden
+
+Das folgende Docker-Beispiel verwendet die Schlüsseldatei-Methode.
 
 1 - Wenn Docker bereits installiert ist, verbinden Sie sich über SSH mit Ihrem Server und erstellen Sie ein Volume für hbbr.
 
@@ -53,8 +90,18 @@ Die Befehlssyntax lautet: `scp <path/filename> username@server:</destination/pat
 3 - Stellen Sie den hbbr-Container unter Verwendung des zuvor erstellten Volumes bereit. Dieses Volume enthält das private Schlüsselpaar, das für die Ausführung Ihres privaten Relay-Servers benötigt wird.
 
 ```
+# sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server-pro hbbr
+```
+
+Das Image `rustdesk/rustdesk-server` akzeptiert weiterhin `-k <KEY>`. Um die eingebundene Schlüsseldatei zu verwenden, starten Sie es mit `-k _`:
+
+```bash
 # sudo docker run --name hbbr -v hbbr:/root -td --net=host rustdesk/rustdesk-server hbbr -k _
 ```
+
+Dabei ist `_` ein spezieller Wert und nicht der Schlüssel selbst. Er weist `hbbr` an, `id_ed25519` zu laden oder zu erzeugen, daraus den öffentlichen Schlüssel abzuleiten und mit diesem Schlüssel Relay-Anfragen zu prüfen. RustDesk Server Pro-Versionen vor 1.8.6 akzeptierten ebenfalls `-k _`, um `id_ed25519` zu laden.
+
+Ab RustDesk Server Pro 1.8.6 ist die Option `-k` für `hbbr` veraltet und wird ignoriert. Wenn `KEY` nicht gesetzt ist, leitet `hbbr` den öffentlichen Schlüssel aus `id_ed25519` ab oder liest ihn aus `id_ed25519.pub`, wenn die private Schlüsseldatei nicht vorhanden ist. Wenn keine der beiden Dateien vorhanden ist, läuft `hbbr` im öffentlichen Relay-Modus.
 
 4 - Überprüfen Sie in den Logs, ob hbbr mit Ihrem Schlüsselpaar läuft.
 

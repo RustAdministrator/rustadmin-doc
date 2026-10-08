@@ -117,7 +117,7 @@ Pour attribuer une stratégie à un périphérique, survolez le côté droit de 
 
 ## Jeton API
 
-Vous devez d’abord aller dans **Paramètres → Jetons → Créer** et créer un jeton avec les permissions requises : **Périphérique, Journal d’Audit, Utilisateur, Groupe, Stratégie, Carnet d’Adresses**.
+Vous devez d’abord aller dans **Paramètres → Jetons → Créer** et créer un jeton avec les permissions requises : **Périphérique, Journal d’Audit, Utilisateur, Groupe, Stratégie, Carnet d’Adresses, Rôle Administrateur, Rôle de Contrôle**.
 
 Une fois créé, vous pouvez utiliser ces jetons via **ligne de commande** ou **Python CLI** pour effectuer des actions avec les permissions correspondantes.
 
@@ -223,47 +223,47 @@ voir [ici](https://github.com/rustdesk/rustdesk/discussions/6377#discussioncomme
 
 ---
 
-#### Gestion des Groupes d'Utilisateurs (`user_group.py`)
+#### Gestion des Groupes d'Utilisateurs (`user-groups.py`)
 
 **Afficher l'aide :**  
-`./user_group.py -h`
+`./user-groups.py -h`
 
 **Voir les groupes d'utilisateurs :**  
-`./user_group.py --url <url> --token <token> view [--name <group_name>]`
+`./user-groups.py --url <url> --token <token> view [--name <group_name>]`
 
 **Exemple :**  
-`./user_group.py --url https://example.com --token <token> view --name "Équipe Ventes"`
+`./user-groups.py --url https://example.com --token <token> view --name "Équipe Ventes"`
 
 **Opérations sur les groupes :**
 
 - **Créer un groupe d'utilisateurs :**  
-  `./user_group.py --url <url> --token <token> add --name "NomGroupe" [--note "description"] [--accessed-from '<json>'] [--access-to '<json>']`
+  `./user-groups.py --url <url> --token <token> add --name "NomGroupe" [--note "description"] [--accessed-from '<json>'] [--access-to '<json>']`
   
   Exemple avec contrôle d'accès :  
-  `./user_group.py --url <url> --token <token> add --name "Ingénierie" --accessed-from '[{"type":0,"name":"Managers"}]' --access-to '[{"type":1,"name":"Serveurs Dev"}]'`
+  `./user-groups.py --url <url> --token <token> add --name "Ingénierie" --accessed-from '[{"type":0,"name":"Managers"}]' --access-to '[{"type":1,"name":"Serveurs Dev"}]'`
 
 - **Mettre à jour un groupe d'utilisateurs :**  
-  `./user_group.py --url <url> --token <token> update --name "NomGroupe" [--new-name "Nouveau Nom"] [--note "nouvelle note"] [--accessed-from '<json>'] [--access-to '<json>']`
+  `./user-groups.py --url <url> --token <token> update --name "NomGroupe" [--new-name "Nouveau Nom"] [--note "nouvelle note"] [--accessed-from '<json>'] [--access-to '<json>']`
 
 - **Supprimer un groupe d'utilisateurs :**  
-  `./user_group.py --url <url> --token <token> delete --name "NomGroupe"`
+  `./user-groups.py --url <url> --token <token> delete --name "NomGroupe"`
   
   Prend en charge les noms séparés par des virgules : `--name "Groupe1,Groupe2,Groupe3"`
 
 **Gestion des utilisateurs dans les groupes :**
 
 - **Voir les utilisateurs dans un groupe :**  
-  `./user_group.py --url <url> --token <token> view-users [--name <group_name>] [--user-name <username>]`
+  `./user-groups.py --url <url> --token <token> view-users [--name <group_name>] [--user-name <username>]`
   
   Filtres :
   - `--name` : nom du groupe (correspondance exacte, optionnel)
   - `--user-name` : nom d'utilisateur (recherche floue, optionnel)
   
   Exemple :  
-  `./user_group.py --url <url> --token <token> view-users --name Default --user-name john`
+  `./user-groups.py --url <url> --token <token> view-users --name Default --user-name john`
 
 - **Ajouter des utilisateurs à un groupe :**  
-  `./user_group.py --url <url> --token <token> add-users --name "NomGroupe" --users "user1,user2,user3"`
+  `./user-groups.py --url <url> --token <token> add-users --name "NomGroupe" --users "user1,user2,user3"`
 
 **Paramètres de contrôle d'accès :**
 
@@ -283,37 +283,138 @@ voir [ici](https://github.com/rustdesk/rustdesk/discussions/6377#discussioncomme
 
 ---
 
-#### Gestion des Groupes de Périphériques (`device_group.py`)
+#### Gestion des rôles administrateur (`admin-roles.py`)
+
+Le jeton doit appartenir à un administrateur complet et disposer d’un accès en lecture ou en lecture-écriture pour **Admin Role**. Les commandes qui résolvent les noms d’utilisateur ou répertorient les membres d’un rôle nécessitent également un accès en lecture pour **User**.
+
+**Afficher les rôles :**
+
+```bash
+./admin-roles.py --url <url> --token <token> view [--name <nom_role>] [--type global|individual|group]
+./admin-roles.py --url <url> --token <token> view --guid <guid_role>
+```
+
+**Créer un rôle :**
+
+```bash
+./admin-roles.py --url <url> --token <token> add \
+  --name "Support Admin" --type global \
+  --permissions "users.view,devices.view,audits.view" --note "Support en lecture seule"
+
+./admin-roles.py --url <url> --token <token> add \
+  --name "Support Scope" --type group \
+  --permissions "users.view,devices.view,devices.enable_disable" \
+  --user-groups "Support" --device-groups "Servers" --unassigned
+```
+
+Le type d’un rôle ne peut plus être modifié après sa création. `--permissions` accepte des noms de permissions séparés par des virgules, des ID décimaux ou des ID préfixés par `0x`, et ces formats peuvent être mélangés. Par exemple, `users.view,513,0x0203` équivaut à `257,513,515`. Le serveur rejette les permissions qui ne sont pas valides pour le type de rôle choisi.
+
+La commande `view` reconvertit les ID connus en noms figurant dans le tableau suivant. Un ID inconnu du script reste affiché sous forme numérique afin de ne pas masquer une permission ajoutée par un serveur plus récent.
+
+| Domaine | Permissions | Types de rôle valides |
+| --- | --- | --- |
+| Utilisateurs | `users.view` (`257`); `users.create` (`259`); `users.invite` (`260`); `users.delete` (`261`); `users.enable_disable` (`262`); `users.edit_email` (`263`); `users.edit_password` (`264`); `users.edit_note` (`265`); `users.manage_2fa` (`266`); `users.force_logout` (`267`); `users.change_strategy` (`269`); `users.change_control_role` (`270`); `users.edit_display_name` (`271`) | `global`, `group` |
+| Utilisateurs | `users.change_group` (`268`) | `global` |
+| Périphériques | `devices.view` (`513`) | `global`, `group` |
+| Périphériques | `devices.enable_disable` (`515`); `devices.delete` (`516`); `devices.edit_info` (`517`); `devices.change_strategy` (`520`) | `global`, `individual`, `group` |
+| Périphériques | `devices.assign_to_user` (`518`); `devices.change_group` (`519`) | `global` |
+| Groupes d’utilisateurs | `user_groups.view` (`769`); `user_groups.edit` (`770`) | `global` |
+| Groupes de périphériques | `device_groups.view` (`1025`); `device_groups.edit` (`1026`); `device_groups.change_strategy` (`1027`) | `global` |
+| Journaux d’audit | `audits.view` (`1281`); `audits.edit` (`1282`) | `global`, `individual` |
+| Stratégies | `strategies.view` (`1537`); `strategies.edit` (`1538`) | `global` |
+| Clients personnalisés | `custom_clients.view` (`1793`); `custom_clients.edit` (`1794`) | `global` |
+| Rôles de contrôle | `control_roles.view` (`2049`); `control_roles.edit` (`2050`) | `global` |
+
+**Mettre à jour ou supprimer un rôle :**
+
+```bash
+./admin-roles.py --url <url> --token <token> update --name "Support Admin" \
+  [--new-name "Helpdesk Admin"] [--note "nouvelle note"] [--permissions "users.view,devices.view"] \
+  [--user-groups "Support"] [--device-groups "Servers"] [--unassigned|--no-unassigned]
+
+./admin-roles.py --url <url> --token <token> delete --name "Support Admin"
+```
+
+Passez une valeur vide à `--note`, `--permissions`, `--user-groups` ou `--device-groups` pour effacer le champ, par exemple `--permissions ""`.
+
+**Gérer les membres du rôle :**
+
+```bash
+./admin-roles.py --url <url> --token <token> view-users --name "Support Admin"
+./admin-roles.py --url <url> --token <token> add-users --name "Support Admin" --users "user1,user2"
+./admin-roles.py --url <url> --token <token> remove-users --name "Support Admin" --users "user1,user2"
+```
+
+Les rôles et les utilisateurs peuvent également être indiqués par GUID. `--users` accepte un mélange de noms d’utilisateur et de GUID.
+
+---
+
+#### Gestion des rôles de contrôle (`control-roles.py`)
+
+Le jeton doit disposer d’un accès en lecture ou en lecture-écriture pour **Control Role**. Les commandes qui résolvent les noms d’utilisateur ou répertorient les membres d’un rôle nécessitent également un accès en lecture pour **User**.
+
+**Afficher les rôles :**
+
+```bash
+./control-roles.py --url <url> --token <token> view [--name <nom_role>] [--status enabled|disabled]
+./control-roles.py --url <url> --token <token> view --guid <guid_role>
+```
+
+**Créer, mettre à jour, supprimer, activer ou désactiver un rôle :**
+
+```bash
+./control-roles.py --url <url> --token <token> add --name "Contractors" [--note "Accès restreint"]
+./control-roles.py --url <url> --token <token> update --name "Contractors" [--new-name "Vendors"] [--note "nouvelle note"]
+./control-roles.py --url <url> --token <token> delete --name "Contractors"
+./control-roles.py --url <url> --token <token> enable --name "Contractors"
+./control-roles.py --url <url> --token <token> disable --name "Contractors"
+```
+
+Les nouveaux rôles créés avec ce script ne contiennent aucune permission de contrôle. Configurez-les dans la console web avant d’y affecter des utilisateurs. Ce script ne gère et n’affiche pas les définitions des permissions de contrôle.
+
+**Gérer les membres du rôle :**
+
+```bash
+./control-roles.py --url <url> --token <token> view-users --name "Contractors"
+./control-roles.py --url <url> --token <token> assign-users --name "Contractors" --users "user1,user2"
+./control-roles.py --url <url> --token <token> remove-users --users "user1,user2"
+```
+
+Les rôles et les utilisateurs peuvent également être indiqués par GUID. `remove-users` efface le rôle de contrôle actuel de chaque utilisateur et n’accepte donc ni `--name` ni `--guid`. Pour le rôle réservé `Default`, `view-users` ne répertorie que les affectations explicites ; les utilisateurs sans rôle de contrôle affecté héritent également de `Default`. Le rôle `Not Logged` ne peut pas être affecté à des utilisateurs, et les rôles réservés ne peuvent pas être renommés, recevoir une note ou être supprimés.
+
+---
+
+#### Gestion des Groupes de Périphériques (`device-groups.py`)
 
 **Afficher l'aide :**  
-`./device_group.py -h`
+`./device-groups.py -h`
 
 **Voir les groupes de périphériques :**  
-`./device_group.py --url <url> --token <token> view [--name <group_name>]`
+`./device-groups.py --url <url> --token <token> view [--name <group_name>]`
 
 **Exemple :**  
-`./device_group.py --url https://example.com --token <token> view`
+`./device-groups.py --url https://example.com --token <token> view`
 
 **Opérations sur les groupes :**
 
 - **Créer un groupe de périphériques :**  
-  `./device_group.py --url <url> --token <token> add --name "NomGroupe" [--note "description"] [--accessed-from '<json>']`
+  `./device-groups.py --url <url> --token <token> add --name "NomGroupe" [--note "description"] [--accessed-from '<json>']`
   
   Exemple :  
-  `./device_group.py --url <url> --token <token> add --name "Production" --accessed-from '[{"type":0,"name":"Admins"}]'`
+  `./device-groups.py --url <url> --token <token> add --name "Production" --accessed-from '[{"type":0,"name":"Admins"}]'`
 
 - **Mettre à jour un groupe de périphériques :**  
-  `./device_group.py --url <url> --token <token> update --name "NomGroupe" [--new-name "Nouveau Nom"] [--note "nouvelle note"] [--accessed-from '<json>']`
+  `./device-groups.py --url <url> --token <token> update --name "NomGroupe" [--new-name "Nouveau Nom"] [--note "nouvelle note"] [--accessed-from '<json>']`
 
 - **Supprimer un groupe de périphériques :**  
-  `./device_group.py --url <url> --token <token> delete --name "NomGroupe"`
+  `./device-groups.py --url <url> --token <token> delete --name "NomGroupe"`
   
   Prend en charge les noms séparés par des virgules : `--name "Groupe1,Groupe2,Groupe3"`
 
 **Gestion des périphériques dans les groupes :**
 
 - **Voir les périphériques dans un groupe :**  
-  `./device_group.py --url <url> --token <token> view-devices [filtres]`
+  `./device-groups.py --url <url> --token <token> view-devices [filtres]`
   
   Filtres disponibles :
   - `--name` : nom du groupe de périphériques (correspondance exacte)
@@ -325,21 +426,21 @@ voir [ici](https://github.com/rustdesk/rustdesk/discussions/6377#discussioncomme
   Exemples :  
   ```bash
   # Voir tous les périphériques dans un groupe
-  ./device_group.py --url <url> --token <token> view-devices --name Production
+  ./device-groups.py --url <url> --token <token> view-devices --name Production
   
   # Rechercher par nom de périphérique
-  ./device_group.py --url <url> --token <token> view-devices --device-name server
+  ./device-groups.py --url <url> --token <token> view-devices --device-name server
   
   # Combiner les filtres
-  ./device_group.py --url <url> --token <token> view-devices --name Production --user-name john
+  ./device-groups.py --url <url> --token <token> view-devices --name Production --user-name john
   ```
 
 
 - **Ajouter des périphériques à un groupe :**  
-  `./device_group.py --url <url> --token <token> add-devices --name "NomGroupe" --ids "deviceid1,deviceid2"`
+  `./device-groups.py --url <url> --token <token> add-devices --name "NomGroupe" --ids "deviceid1,deviceid2"`
 
 - **Retirer des périphériques d'un groupe :**  
-  `./device_group.py --url <url> --token <token> remove-devices --name "NomGroupe" --ids "deviceid1,deviceid2"`
+  `./device-groups.py --url <url> --token <token> remove-devices --name "NomGroupe" --ids "deviceid1,deviceid2"`
 
 **Paramètre de contrôle d'accès :**
 

@@ -116,7 +116,7 @@ Pentru a atribui o strategie unui dispozitiv, plasează cursorul în partea drea
 
 ## Token API
 
-Mai întâi trebuie să mergi la **Settings → Tokens → Create** și să creezi un token cu permisiunile necesare: **Device, Audit Log, User, Group, Strategy, Address Book**.
+Mai întâi trebuie să mergi la **Settings → Tokens → Create** și să creezi un token cu permisiunile necesare: **Device, Audit Log, User, Group, Strategy, Address Book, Admin Role, Control Role**.
 
 Odată creat, poți folosi aceste token-uri din linia de comandă sau din CLI Python pentru a efectua acțiuni cu permisiunile respective.
 
@@ -218,47 +218,47 @@ Linia de comandă pe Windows nu afișează output implicit. Pentru a obține out
 
 ---
 
-#### Management grupuri utilizatori (`user_group.py`)
+#### Management grupuri utilizatori (`user-groups.py`)
 
 **Afișează help:**  
-`./user_group.py -h`
+`./user-groups.py -h`
 
 **Vezi grupuri utilizatori:**  
-`./user_group.py --url <url> --token <token> view [--name <group_name>]`
+`./user-groups.py --url <url> --token <token> view [--name <group_name>]`
 
 **Exemplu:**  
-`./user_group.py --url https://example.com --token <token> view --name "Echipa Vânzări"`
+`./user-groups.py --url https://example.com --token <token> view --name "Echipa Vânzări"`
 
 **Operații pe grupuri:**
 
 - **Creează grup utilizatori:**  
-  `./user_group.py --url <url> --token <token> add --name "NumeGrup" [--note "descriere"] [--accessed-from '<json>'] [--access-to '<json>']`
+  `./user-groups.py --url <url> --token <token> add --name "NumeGrup" [--note "descriere"] [--accessed-from '<json>'] [--access-to '<json>']`
   
   Exemplu cu control acces:  
-  `./user_group.py --url <url> --token <token> add --name "Inginerie" --accessed-from '[{"type":0,"name":"Manageri"}]' --access-to '[{"type":1,"name":"Servere Dev"}]'`
+  `./user-groups.py --url <url> --token <token> add --name "Inginerie" --accessed-from '[{"type":0,"name":"Manageri"}]' --access-to '[{"type":1,"name":"Servere Dev"}]'`
 
 - **Actualizează grup utilizatori:**  
-  `./user_group.py --url <url> --token <token> update --name "NumeGrup" [--new-name "Nume Nou"] [--note "notă nouă"] [--accessed-from '<json>'] [--access-to '<json>']`
+  `./user-groups.py --url <url> --token <token> update --name "NumeGrup" [--new-name "Nume Nou"] [--note "notă nouă"] [--accessed-from '<json>'] [--access-to '<json>']`
 
 - **Șterge grup utilizatori:**  
-  `./user_group.py --url <url> --token <token> delete --name "NumeGrup"`
+  `./user-groups.py --url <url> --token <token> delete --name "NumeGrup"`
   
   Suportă nume separate prin virgulă: `--name "Grup1,Grup2,Grup3"`
 
 **Management utilizatori în grupuri:**
 
 - **Vezi utilizatori în grup:**  
-  `./user_group.py --url <url> --token <token> view-users [--name <group_name>] [--user-name <username>]`
+  `./user-groups.py --url <url> --token <token> view-users [--name <group_name>] [--user-name <username>]`
   
   Filtre:
   - `--name`: nume grup (potrivire exactă, opțional)
   - `--user-name`: username (căutare aproximativă, opțional)
   
   Exemplu:  
-  `./user_group.py --url <url> --token <token> view-users --name Default --user-name john`
+  `./user-groups.py --url <url> --token <token> view-users --name Default --user-name john`
 
 - **Adaugă utilizatori în grup:**  
-  `./user_group.py --url <url> --token <token> add-users --name "NumeGrup" --users "user1,user2,user3"`
+  `./user-groups.py --url <url> --token <token> add-users --name "NumeGrup" --users "user1,user2,user3"`
 
 **Parametri control acces:**
 
@@ -278,37 +278,143 @@ Linia de comandă pe Windows nu afișează output implicit. Pentru a obține out
 
 ---
 
-#### Management grupuri dispozitive (`device_group.py`)
+#### Gestionarea rolurilor de administrator (`admin-roles.py`)
+
+Tokenul trebuie să aparțină unui administrator complet și să aibă permisiunea **Rol de administrator** de citire sau citire/scriere. Comenzile care identifică numele utilizatorilor sau listează membrii rolului necesită și permisiunea **Utilizator** de citire.
+
+**Vizualizarea rolurilor:**
+
+```bash
+# Listează rolurile, filtrate opțional după numele exact sau tip
+./admin-roles.py --url <url> --token <token> view [--name <role_name>] [--type global|individual|group]
+
+# Vizualizează un rol după GUID
+./admin-roles.py --url <url> --token <token> view --guid <role_guid>
+```
+
+**Crearea unui rol:**
+
+```bash
+# Rol global
+./admin-roles.py --url <url> --token <token> add \
+  --name "Support Admin" --type global \
+  --permissions "users.view,devices.view,audits.view" --note "Read-only support"
+
+# Rol cu domeniu de aplicare la nivel de grup
+./admin-roles.py --url <url> --token <token> add \
+  --name "Support Scope" --type group \
+  --permissions "users.view,devices.view,devices.enable_disable" \
+  --user-groups "Support" --device-groups "Servers" --unassigned
+```
+
+Tipul rolului nu poate fi schimbat după creare. `--permissions` acceptă nume de permisiuni, ID-uri zecimale sau ID-uri cu prefixul `0x`, separate prin virgulă; formatele pot fi combinate. De exemplu, `users.view,513,0x0203` este echivalent cu `257,513,515`. Serverul respinge permisiunile care nu sunt valide pentru tipul de rol selectat.
+
+Comanda `view` convertește ID-urile de permisiuni cunoscute înapoi la numele de mai jos. Un ID necunoscut scriptului este păstrat ca număr, astfel încât permisiunile adăugate de o versiune mai nouă a serverului să nu fie ascunse.
+
+| Zonă | Permisiuni | Tipuri de rol valide |
+| --- | --- | --- |
+| Utilizatori | `users.view` (`257`); `users.create` (`259`); `users.invite` (`260`); `users.delete` (`261`); `users.enable_disable` (`262`); `users.edit_email` (`263`); `users.edit_password` (`264`); `users.edit_note` (`265`); `users.manage_2fa` (`266`); `users.force_logout` (`267`); `users.change_strategy` (`269`); `users.change_control_role` (`270`); `users.edit_display_name` (`271`) | global, group |
+| Utilizatori | `users.change_group` (`268`) | global |
+| Dispozitive | `devices.view` (`513`) | global, group |
+| Dispozitive | `devices.enable_disable` (`515`); `devices.delete` (`516`); `devices.edit_info` (`517`); `devices.change_strategy` (`520`) | global, individual, group |
+| Dispozitive | `devices.assign_to_user` (`518`); `devices.change_group` (`519`) | global |
+| Grupuri de utilizatori | `user_groups.view` (`769`); `user_groups.edit` (`770`) | global |
+| Grupuri de dispozitive | `device_groups.view` (`1025`); `device_groups.edit` (`1026`); `device_groups.change_strategy` (`1027`) | global |
+| Audituri | `audits.view` (`1281`); `audits.edit` (`1282`) | global, individual |
+| Strategii | `strategies.view` (`1537`); `strategies.edit` (`1538`) | global |
+| Clienți personalizați | `custom_clients.view` (`1793`); `custom_clients.edit` (`1794`) | global |
+| Roluri de control | `control_roles.view` (`2049`); `control_roles.edit` (`2050`) | global |
+
+**Actualizarea sau ștergerea unui rol:**
+
+```bash
+./admin-roles.py --url <url> --token <token> update --name "Support Admin" \
+  [--new-name "Helpdesk Admin"] [--note "new note"] [--permissions "users.view,devices.view"] \
+  [--user-groups "Support"] [--device-groups "Servers"] [--unassigned|--no-unassigned]
+
+./admin-roles.py --url <url> --token <token> delete --name "Support Admin"
+```
+
+Transmiteți o valoare goală pentru a șterge `--note`, `--permissions`, `--user-groups` sau `--device-groups`, de exemplu `--permissions ""`.
+
+**Gestionarea membrilor rolului:**
+
+```bash
+./admin-roles.py --url <url> --token <token> view-users --name "Support Admin"
+./admin-roles.py --url <url> --token <token> add-users --name "Support Admin" --users "user1,user2"
+./admin-roles.py --url <url> --token <token> remove-users --name "Support Admin" --users "user1,user2"
+```
+
+Rolurile țintă și utilizatorii pot fi specificați și prin GUID. Numele utilizatorilor și GUID-urile pot fi combinate în `--users`.
+
+---
+
+#### Gestionarea rolurilor de control (`control-roles.py`)
+
+Tokenul necesită permisiunea **Rol de control** de citire sau citire/scriere. Comenzile care identifică numele utilizatorilor sau listează membrii rolului necesită și permisiunea **Utilizator** de citire.
+
+**Vizualizarea rolurilor:**
+
+```bash
+./control-roles.py --url <url> --token <token> view [--name <role_name>] [--status enabled|disabled]
+./control-roles.py --url <url> --token <token> view --guid <role_guid>
+```
+
+**Crearea, actualizarea, ștergerea, activarea sau dezactivarea unui rol:**
+
+```bash
+./control-roles.py --url <url> --token <token> add --name "Contractors" [--note "Restricted access"]
+./control-roles.py --url <url> --token <token> update --name "Contractors" [--new-name "Vendors"] [--note "new note"]
+./control-roles.py --url <url> --token <token> delete --name "Contractors"
+./control-roles.py --url <url> --token <token> enable --name "Contractors"
+./control-roles.py --url <url> --token <token> disable --name "Contractors"
+```
+
+Rolurile noi create de acest script nu includ permisiuni de control. Configurați-le în consola web înainte de a atribui utilizatori. Acest script nu gestionează și nu afișează definițiile permisiunilor de control.
+
+**Gestionarea membrilor rolului:**
+
+```bash
+./control-roles.py --url <url> --token <token> view-users --name "Contractors"
+./control-roles.py --url <url> --token <token> assign-users --name "Contractors" --users "user1,user2"
+./control-roles.py --url <url> --token <token> remove-users --users "user1,user2"
+```
+
+Rolurile țintă și utilizatorii pot fi specificați și prin GUID. `remove-users` elimină rolul de control curent al fiecărui utilizator, deci nu acceptă `--name` sau `--guid`. Pentru rolul rezervat `Default`, `view-users` listează numai atribuirile explicite; utilizatorii fără un rol de control atribuit moștenesc, de asemenea, rolul `Default`. Rolul rezervat `Not Logged` nu poate fi atribuit utilizatorilor, iar rolurile rezervate nu pot fi redenumite, nu pot primi o notă și nu pot fi șterse.
+
+---
+
+#### Management grupuri dispozitive (`device-groups.py`)
 
 **Afișează help:**  
-`./device_group.py -h`
+`./device-groups.py -h`
 
 **Vezi grupuri dispozitive:**  
-`./device_group.py --url <url> --token <token> view [--name <group_name>]`
+`./device-groups.py --url <url> --token <token> view [--name <group_name>]`
 
 **Exemplu:**  
-`./device_group.py --url https://example.com --token <token> view`
+`./device-groups.py --url https://example.com --token <token> view`
 
 **Operații pe grupuri:**
 
 - **Creează grup dispozitive:**  
-  `./device_group.py --url <url> --token <token> add --name "NumeGrup" [--note "descriere"] [--accessed-from '<json>']`
+  `./device-groups.py --url <url> --token <token> add --name "NumeGrup" [--note "descriere"] [--accessed-from '<json>']`
   
   Exemplu:  
-  `./device_group.py --url <url> --token <token> add --name "Producție" --accessed-from '[{"type":0,"name":"Admins"}]'`
+  `./device-groups.py --url <url> --token <token> add --name "Producție" --accessed-from '[{"type":0,"name":"Admins"}]'`
 
 - **Actualizează grup dispozitive:**  
-  `./device_group.py --url <url> --token <token> update --name "NumeGrup" [--new-name "Nume Nou"] [--note "notă nouă"] [--accessed-from '<json>']`
+  `./device-groups.py --url <url> --token <token> update --name "NumeGrup" [--new-name "Nume Nou"] [--note "notă nouă"] [--accessed-from '<json>']`
 
 - **Șterge grup dispozitive:**  
-  `./device_group.py --url <url> --token <token> delete --name "NumeGrup"`
+  `./device-groups.py --url <url> --token <token> delete --name "NumeGrup"`
   
   Suportă nume separate prin virgulă: `--name "Grup1,Grup2,Grup3"`
 
 **Management dispozitive în grupuri:**
 
 - **Vezi dispozitive în grup:**  
-  `./device_group.py --url <url> --token <token> view-devices [filtre]`
+  `./device-groups.py --url <url> --token <token> view-devices [filtre]`
   
   Filtre disponibile:
   - `--name`: nume grup dispozitive (potrivire exactă)
@@ -320,25 +426,25 @@ Linia de comandă pe Windows nu afișează output implicit. Pentru a obține out
   Exemple:  
   ```bash
   # Vezi toate dispozitivele dintr-un grup
-  ./device_group.py --url <url> --token <token> view-devices --name Producție
+  ./device-groups.py --url <url> --token <token> view-devices --name Producție
   
   # Caută după nume dispozitiv
-  ./device_group.py --url <url> --token <token> view-devices --device-name server
+  ./device-groups.py --url <url> --token <token> view-devices --device-name server
   
   # Combină filtre
-  ./device_group.py --url <url> --token <token> view-devices --name Producție --user-name john
+  ./device-groups.py --url <url> --token <token> view-devices --name Producție --user-name john
   ```
 
 - **Vezi grupuri dispozitive accesibile:**  
-  `./device_group.py --url <url> --token <token> accessible`
+  `./device-groups.py --url <url> --token <token> accessible`
   
   Afișează toate grupurile de dispozitive accesibile utilizatorului curent.
 
 - **Adaugă dispozitive în grup:**  
-  `./device_group.py --url <url> --token <token> add-devices --name "NumeGrup" --ids "deviceid1,deviceid2"`
+  `./device-groups.py --url <url> --token <token> add-devices --name "NumeGrup" --ids "deviceid1,deviceid2"`
 
 - **Elimină dispozitive din grup:**  
-  `./device_group.py --url <url> --token <token> remove-devices --name "NumeGrup" --ids "deviceid1,deviceid2"`
+  `./device-groups.py --url <url> --token <token> remove-devices --name "NumeGrup" --ids "deviceid1,deviceid2"`
 
 **Parametru control acces:**
 
